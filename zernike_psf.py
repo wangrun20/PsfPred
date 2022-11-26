@@ -141,9 +141,9 @@ class ZernikePSFGenerator(object):
         pad_H, pad_W = self.gauss_r.shape[-2] // 2, self.gauss_r.shape[-1] // 2
         self.psf_padding = (pad_H, pad_H, pad_W, pad_W)
 
-    def generate_PSF(self, phaseZ):
+    def generate_PSF(self, phaseZ, blur=True):
         """phaseZ shape (N, 25), return kernels shape (N, kernel_size, kernel_size)"""
-        return self.pupil_phase_to_PSF(self.phaseZ_to_pupil_phase(phaseZ))
+        return self.pupil_phase_to_PSF(self.phaseZ_to_pupil_phase(phaseZ), blur=blur)
 
     def phaseZ_to_pupil_phase(self, phaseZ):
         """phaseZ shape (N, 25), return pupil_phase shape (N, PSFsize, PSFsize)"""
@@ -156,6 +156,7 @@ class ZernikePSFGenerator(object):
 
     def mask_pupil_phase(self, pupil_phase):
         """pupil_phase shape (..., PSFsize, PSFsize), return pupil_phase shape (..., mask_l, mask_l)"""
+        assert pupil_phase.shape[-2:] == (self.PSFsize, self.PSFsize)
         return pupil_phase[..., self.mask_closure[0]:self.mask_closure[1] + 1,
                self.mask_closure[2]:self.mask_closure[3] + 1]
 
@@ -166,7 +167,7 @@ class ZernikePSFGenerator(object):
                self.PSFsize - 1 - self.mask_closure[1])
         return torch.nn.functional.pad(pupil_phase, pad=pad, mode='constant', value=0.0)
 
-    def pupil_phase_to_PSF(self, pupil_phase):
+    def pupil_phase_to_PSF(self, pupil_phase, blur=True):
         """pupil_phase shape (N, PSFsize, PSFsize), return kernels shape (N, kernel_size, kernel_size)"""
         # self.pupil_mag是一个位于tensor中心的圆形mask
         pupil_complex = self.pupil_mag * torch.exp(2j * torch.pi * pupil_phase)
@@ -175,9 +176,12 @@ class ZernikePSFGenerator(object):
         # 裁剪成kernel_size
         psfs = psfs[:, self.startx_gen:self.endx_gen, self.starty_gen:self.endy_gen] / (self.PSFsize ** 2)
         # 卷积模糊核
-        padded_psfs = torch.nn.functional.pad(psfs, pad=self.psf_padding, mode='constant', value=0.0).unsqueeze(1)
-        blur_kernel = self.gauss_r.unsqueeze(0).unsqueeze(0)
-        scaled_psfs = torch.nn.functional.conv2d(padded_psfs, blur_kernel).squeeze(1)
+        if blur:
+            padded_psfs = torch.nn.functional.pad(psfs, pad=self.psf_padding, mode='constant', value=0.0).unsqueeze(1)
+            blur_kernel = self.gauss_r.unsqueeze(0).unsqueeze(0)
+            scaled_psfs = torch.nn.functional.conv2d(padded_psfs, blur_kernel).squeeze(1)
+        else:
+            scaled_psfs = psfs
         return scaled_psfs / torch.sum(scaled_psfs)
 
 

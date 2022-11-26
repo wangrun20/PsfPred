@@ -100,7 +100,12 @@ def normalization(tensor, v_min=0.0, v_max=1.0):
     return ((tensor - torch.min(tensor)) / (torch.max(tensor) - torch.min(tensor))) * (v_max - v_min) + v_min
 
 
-def get_phaseZ(opt, batch_size=1, device=torch.device('cpu')):
+def get_phaseZ(opt=None, batch_size=1, device=torch.device('cpu')):
+    """
+    opt: default = {'idx_start': 4, 'num_idx': 11, 'mode': 'gaussian', 'std': 0.125, 'bound': 1.0}
+    """
+    if opt is None:
+        opt = {'idx_start': 4, 'num_idx': 11, 'mode': 'gaussian', 'std': 0.125, 'bound': 1.0}
     phaseZ = torch.zeros(size=(batch_size, 25))
     if opt['mode'] == 'gaussian':
         phaseZ[:, opt['idx_start']:opt['idx_start'] + opt['num_idx']] = torch.normal(mean=0.0, std=opt['std'],
@@ -163,6 +168,14 @@ def one_plus_log(x, base='e'):
         return torch.sign(x) * torch.log10(1.0 + torch.abs(x))
     else:
         raise NotImplementedError
+
+
+def save_gray_img(x, path, norm=True):
+    assert len(x.shape) == 2
+    if norm:
+        x = normalization(x)
+    x = (x * 65535.0).to(torch.int32)
+    transforms.ToPILImage()(x).save(path)
 
 
 def main():

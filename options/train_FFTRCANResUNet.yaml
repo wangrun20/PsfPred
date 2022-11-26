@@ -1,0 +1,108 @@
+project_name: init_kernel_net
+experiment_name: train_for_BioSR_11pZ_Gstd0.125b1_CEMF_noise100to1000_FFTRCANResUNet
+
+model:
+    network: FFTRCANResUNet
+    in_channels: 1
+    num_rg: 2
+    num_rcab: 4
+    reduction: 16
+    encoder_channels: 128
+    conv_kernel_size: 3
+    num_pixel_stack_layer: 3
+    num_down_up: 5
+    out_channels: 1
+
+train_settings:
+    is_data_parallel: True
+    model_gpu_id: 0 # for no data_parallel
+    max_epoch: 1000
+    learning_rate: 1e-4
+    loss: L2  # L1 | L2
+    imgs_per_val_and_save: 2e4
+    imgs_per_scheduler_step: 4e4
+    resume: auto
+
+train_dataset:
+    is_train: true
+    dataset_name: LrAndPsfFromBioSR
+    gpu_id: 1 # None for cpu
+    img_filter:
+        img_root: /home/wr/PycharmProjects/BioDataset/RepeatedMixed
+        structure_selected: [1, 2, 3, 4]
+        included_idx: [11, 100]
+    hr_cropping:
+        mode: random  # random | constant | scanning
+        center_pos: [-1, -1]  # [H, W], for constant
+        scanning_shape: [-1, -1]  # [H, W], for scanning
+    lr_size: [264, 264]  # [H, W]
+    img_signal: [100, 1000]
+    is_norm_lr: True
+    is_norm_k: True
+    psf_settings:
+        kernel_size: 33
+        NA: 1.35
+        Lambda: 0.525
+        RefractiveIndex: 1.33
+        SigmaX: 2.0
+        SigmaY: 2.0
+        Pixelsize: 0.0313
+        nMed: 1.33
+        phaseZ:
+            idx_start: 4
+            num_idx: 15
+            mode: gaussian  # gaussian | uniform
+            std: 0.125  # for gaussian
+            bound: 1.0  # for gaussian and uniform
+    sup_phaseZ: [4, 8]  # all | [begin, end]
+    padding:
+        mode: circular  # constant | reflect | replicate | circular
+        value: 0  # for constant mode
+    loader_settings:
+        batch_size: 4
+        shuffle: true
+        num_workers: 7
+        pin_memory: false
+        drop_last: true
+
+test_dataset:
+    is_train: false
+    dataset_name: LrAndPsfFromBioSR
+    gpu_id:  # None for cpu
+    img_filter:
+        img_root: /home/wr/PycharmProjects/BioDataset/Mixed
+        structure_selected: [1, 2, 3, 4]
+        included_idx: [1, 10]
+    hr_cropping:
+        mode: random  # random | constant | scanning
+        center_pos: [-1, -1]  # [H, W], for constant
+        scanning_shape: [-1, -1]  # [H, W], for scanning
+    lr_size: [264, 264]  # [H, W]
+    img_signal: [1000]
+    is_norm_lr: True
+    is_norm_k: True
+    psf_settings:
+        kernel_size: 33
+        NA: 1.35
+        Lambda: 0.525
+        RefractiveIndex: 1.33
+        SigmaX: 2.0
+        SigmaY: 2.0
+        Pixelsize: 0.0313
+        nMed: 1.33
+        phaseZ:
+            idx_start: 4
+            num_idx: 15
+            mode: gaussian  # gaussian | uniform
+            std: 0.125  # for gaussian
+            bound: 1.0  # for gaussian and uniform
+    sup_phaseZ: [4, 8]  # all | [begin, end]
+    padding:
+        mode: circular  # constant | reflect | replicate | circular
+        value: 0  # for constant mode
+    loader_settings:
+        batch_size: 1
+        shuffle: false
+        num_workers: 0
+        pin_memory: false
+        drop_last: false

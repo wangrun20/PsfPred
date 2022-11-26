@@ -1,0 +1,111 @@
+test_settings:
+    is_save_img: True
+    is_data_parallel: False
+    model_gpu_id: 0 # None for cpu
+
+model:
+    - network: FFTRCANResUNet
+      in_channels: 1
+      num_rg: 2
+      num_rcab: 4
+      reduction: 16
+      encoder_channels: 128
+      conv_kernel_size: 3
+      num_pixel_stack_layer: 3
+      num_down_up: 5
+      out_channels: 1
+      checkpoint_root: ./experiments/train_for_BioSR_11pZ_Gstd0.125b1_CEMF_noise100to1000_FFTRCANResUNet
+      mode: latest  # best | latest
+
+    - network: MANet_s1
+      in_nc: 1
+      scale: 1
+      kernel_size: 33
+      manet_nf: 256
+      manet_nb: 1
+      split: 2
+      checkpoint_root: ./experiments/train_for_BioSR_11pZ_Gstd0.125b1_CEMF_noise1e2to1e3_MANet
+      mode: latest  # best | latest
+
+#    - network: FFTRCANResUNet
+#      in_channels: 1
+#      num_rg: 2
+#      num_rcab: 4
+#      reduction: 16
+#      encoder_channels: 128
+#      conv_kernel_size: 3
+#      num_pixel_stack_layer: 3
+#      num_down_up: 5
+#      out_channels: 1
+#      checkpoint_root: ./experiments/train_for_BioSR_15pZ_Gstd0.125b1_cut4to8_CEMF_noise100to1000_FFTRCANResUNet
+#      mode: latest  # best | latest
+
+test_dataset:
+#    - dataset_name: LrAndPsfFromFolder
+#      img_root: /home/wr/PycharmProjects/PsfPred/datasets/Beads_200nm_dxy_50nm
+#      # Beads_200nm_dxy_50nm | CCPs_conv_beads_psf
+#      lr_size: [264, 264]  # [H, W]
+#      num_test_img: -1  # -1 for all
+#      is_crop: true
+#      crop_center: [900, 900]  # [H, W]
+#      loader_settings:
+#          batch_size: 1
+#          shuffle: false
+#          num_workers: 4
+#          pin_memory: false
+#          drop_last: false
+
+#    - dataset_name: LrAndPsfFromFolder
+#      img_root: /home/wr/PycharmProjects/PsfPred/datasets/CCPs_conv_beads_psf
+#      # Beads_200nm_dxy_50nm | CCPs_conv_beads_psf
+#      lr_size: [264, 264]  # [H, W]
+#      num_test_img: -1
+#      is_crop: false
+#      crop_center: [500, 122]  # [H, W]
+#      loader_settings:
+#          batch_size: 1
+#          shuffle: false
+#          num_workers: 4
+#          pin_memory: false
+#          drop_last: false
+
+    - is_train: false
+      dataset_name: LrAndPsfFromBioSR
+      gpu_id:   # None for cpu
+      img_filter:
+          img_root: /home/wr/PycharmProjects/BioDataset/Mixed
+          structure_selected: [1, 2, 3, 4]
+          included_idx: [1, 4]
+      hr_cropping:
+          mode: random  # random | constant | scanning
+          center_pos: [0, 0] # [H, W], for constant
+          scanning_shape: [2, 2]  # [H, W], for scanning
+      lr_size: [264, 264]  # [H, W]
+      img_signal: [1000]
+      is_norm_lr: True
+      is_norm_k: True
+      psf_settings:
+          kernel_size: 33
+          NA: 1.35
+          Lambda: 0.525
+          RefractiveIndex: 1.33
+          SigmaX: 2.0
+          SigmaY: 2.0
+          Pixelsize: 0.0313
+          nMed: 1.33
+          phaseZ:
+              idx_start: 4
+              num_idx: 11
+              mode: gaussian  # gaussian | uniform
+              std: 0.125  # for gaussian
+              bound: 1.0  # for gaussian and uniform
+      sup_phaseZ: all  # all | [begin, end]
+      padding:
+          mode: circular  # constant | reflect | replicate | circular
+          value: 0  # for constant mode
+      loader_settings:
+          batch_size: 1
+          shuffle: false
+          num_workers: 0
+          pin_memory: false
+          drop_last: false

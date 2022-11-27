@@ -11,7 +11,7 @@ from general_utils import calculate_PSNR, normalization, read_yaml, complex_to_r
 from dataset import get_dataloader
 from models import get_model, restore_checkpoint, \
     FFTResUNet, FFTRCANResUNet, FFTOnlyRCANResUNet, FreqDomainRCANResUNet, \
-    MANet_s1
+    MANet_s1, psnr_heat_map
 
 
 def test_on_given_net_data(net, data_loader, save_path, loss_func=torch.nn.MSELoss()):
@@ -33,10 +33,14 @@ def test_on_given_net_data(net, data_loader, save_path, loss_func=torch.nn.MSELo
                     lr = batch['lr'].to(net_device)
                     assert lr.shape[-2] % 2 == 0
                     k_pred = net(lr)
-                    if net_type == MANet_s1:
-                        k_pred = torch.mean(k_pred, dim=1, keepdim=True)
                     k_true = (batch['kernel'] if len(batch['kernel'].shape) >= 3 else torch.zeros(*k_pred.shape)).to(
                         net_device)
+                    if net_type == MANet_s1:
+                        heat_map = psnr_heat_map(k_true.squeeze(0).squeeze(0), k_pred.squeeze(0).view(lr.shape[-2], lr.shape[-1], k_true.shape[-2], k_true.shape[-1]), is_norm=False)
+                        max_heat = torch.max(heat_map).item()
+                        min_heat = torch.min(heat_map).item()
+                        heat_map = normalization(heat_map.float())
+                        k_pred = torch.mean(k_pred, dim=1, keepdim=True)
                     loss += loss_func(k_true, k_pred).item()
                     psnr = calculate_PSNR(k_pred.detach(), k_true.detach(),
                                           max_val=max(torch.max(k_true).item(), torch.max(k_pred).item()))
@@ -49,7 +53,10 @@ def test_on_given_net_data(net, data_loader, save_path, loss_func=torch.nn.MSELo
                     normed_psnr = calculate_PSNR(k_pred.detach(), k_true.detach(),
                                                  max_val=max(torch.max(k_true).item(), torch.max(k_pred).item()))
                     lr = normalization(lr).squeeze(0).squeeze(0)
-                    result = torch.cat([lr, torch.cat([k_true, k_pred], dim=-2)], dim=-1)
+                    if net_type != MANet_s1:
+                        result = torch.cat([lr, torch.cat([k_true, k_pred], dim=-2)], dim=-1)
+                    else:
+                        result = torch.cat([lr, heat_map, torch.cat([k_true, k_pred], dim=-2)], dim=-1)
                 elif net_type in (FreqDomainRCANResUNet,):
                     lr = batch['hr'].to(net_device)
                     lr = add_poisson_gaussian_noise(lr, 1000)
@@ -104,6 +111,8 @@ def test_on_given_net_data(net, data_loader, save_path, loss_func=torch.nn.MSELo
                 draw_ks_lr = ImageDraw.Draw(result)
                 my_font = ImageFont.truetype('/usr/share/fonts/truetype/abyssinica/AbyssinicaSIL-Regular.ttf', size=16)
                 draw_ks_lr.text((0, 0), batch['name'][0], font=my_font, fill=65535)
+                if net_type == MANet_s1:
+                    draw_ks_lr.text((lr.shape[-1], 0), f'{min_heat:5.2f}~{max_heat:5.2f}', font=my_font, fill=65535)
                 draw_ks_lr.text((int(result.width - k_true.shape[-1]), 0),
                                 f'PSNR {psnr:5.2f}' if psnr is not None else f'No PSNR', font=my_font, fill=65535)
                 draw_ks_lr.text((int(result.width - k_true.shape[-1]), result.height // 2),

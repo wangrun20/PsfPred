@@ -5,6 +5,8 @@ import numpy as np
 
 from collections import OrderedDict
 
+from general_utils import normalization
+
 
 def sequential(*args):
     """Advanced nn.Sequential.
@@ -160,7 +162,8 @@ class MANet_s1(nn.Module):
         self.manet_nf = opt['manet_nf']
         self.manet_nb = opt['manet_nb']
         self.split = opt['split']
-        self.kernel_estimation = MANet(in_nc=self.in_nc, kernel_size=self.kernel_size, nc=[self.manet_nf, self.manet_nf * 2],
+        self.kernel_estimation = MANet(in_nc=self.in_nc, kernel_size=self.kernel_size,
+                                       nc=[self.manet_nf, self.manet_nf * 2],
                                        nb=self.manet_nb, split=self.split)
 
     def forward(self, x):
@@ -182,6 +185,26 @@ class MANet_s1(nn.Module):
         #     out = F.interpolate(x, scale_factor=self.scale, mode='nearest')
 
         return kernel
+
+
+def psnr_heat_map(gt_kernel, pred_kernel: torch.Tensor, is_norm=True):
+    """
+    gt_kernel: (h, w)
+    pred_kernel: (H, W, h, w)
+    return: heat map of shape (H, W)
+    """
+    assert len(gt_kernel.shape) == 2 and gt_kernel.shape[-2:] == pred_kernel.shape[-2:] and len(gt_kernel.shape) == 4
+    if is_norm:
+        gt_kernel = normalization(gt_kernel)
+        max_val = torch.max(torch.max(pred_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True)
+        min_val = torch.min(torch.min(pred_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True)
+        pred_kernel = (pred_kernel - min_val) / (max_val - min_val)
+    gt_kernel = gt_kernel.expand((pred_kernel.shape[0], pred_kernel.shape[1], -1, -1))
+    mse = torch.mean((gt_kernel - pred_kernel) ** 2, dim=(-2, -1), keepdim=True)
+    max_val = torch.max(torch.cat([torch.max(torch.max(gt_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True),
+                                   torch.max(torch.max(pred_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True)],
+                                  dim=-2), dim=-2, keepdim=True)
+    return (20 * torch.log10(max_val / torch.sqrt(mse))).squeeze(-1).squeeze(-1)
 
 
 def main():

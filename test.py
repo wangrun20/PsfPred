@@ -36,7 +36,7 @@ def test_on_given_net_data(net, data_loader, save_path, loss_func=torch.nn.MSELo
                     k_true = (batch['kernel'] if len(batch['kernel'].shape) >= 3 else torch.zeros(*k_pred.shape)).to(
                         net_device)
                     if net_type == MANet_s1:
-                        heat_map = psnr_heat_map(k_true.squeeze(0).squeeze(0), k_pred.squeeze(0).view(lr.shape[-2], lr.shape[-1], k_true.shape[-2], k_true.shape[-1]), is_norm=False)
+                        heat_map = psnr_heat_map(k_true.squeeze(0).squeeze(0), k_pred.squeeze(0).view(lr.shape[-2], lr.shape[-1], k_true.shape[-2], k_true.shape[-1]), is_norm=True)
                         max_heat = torch.max(heat_map).item()
                         min_heat = torch.min(heat_map).item()
                         heat_map = normalization(heat_map.float())
@@ -172,6 +172,12 @@ def run_test(opt_path: str):
                 net = path_net['net']
             else:
                 net = path_net['net'].to(device)
+            if type(net) == MANet_s1:
+                test_loader.dataset.is_norm_lr = False
+                test_loader.dataset.is_norm_k = False
+            else:
+                test_loader.dataset.is_norm_lr = True
+                test_loader.dataset.is_norm_k = True
             print(f'restore checkpoint from {path}')
             test_result = test_on_given_net_data(net, test_loader, f'./{name_base}_m{j}n{i}.png' if is_save_img else None)
             print('avg loss = {}'.format(test_result['test_loss']))

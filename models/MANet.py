@@ -193,17 +193,17 @@ def psnr_heat_map(gt_kernel, pred_kernel: torch.Tensor, is_norm=True):
     pred_kernel: (H, W, h, w)
     return: heat map of shape (H, W)
     """
-    assert len(gt_kernel.shape) == 2 and gt_kernel.shape[-2:] == pred_kernel.shape[-2:] and len(gt_kernel.shape) == 4
+    assert len(gt_kernel.shape) == 2 and gt_kernel.shape[-2:] == pred_kernel.shape[-2:] and len(pred_kernel.shape) == 4
     if is_norm:
         gt_kernel = normalization(gt_kernel)
-        max_val = torch.max(torch.max(pred_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True)
-        min_val = torch.min(torch.min(pred_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True)
+        max_val = torch.max(torch.max(pred_kernel, dim=-2, keepdim=True).values, dim=-1, keepdim=True).values
+        min_val = torch.min(torch.min(pred_kernel, dim=-2, keepdim=True).values, dim=-1, keepdim=True).values
         pred_kernel = (pred_kernel - min_val) / (max_val - min_val)
     gt_kernel = gt_kernel.expand((pred_kernel.shape[0], pred_kernel.shape[1], -1, -1))
     mse = torch.mean((gt_kernel - pred_kernel) ** 2, dim=(-2, -1), keepdim=True)
-    max_val = torch.max(torch.cat([torch.max(torch.max(gt_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True),
-                                   torch.max(torch.max(pred_kernel, dim=-2, keepdim=True), dim=-1, keepdim=True)],
-                                  dim=-2), dim=-2, keepdim=True)
+    max_val = torch.max(torch.cat([torch.max(torch.max(gt_kernel, dim=-2, keepdim=True).values, dim=-1, keepdim=True).values,
+                                   torch.max(torch.max(pred_kernel, dim=-2, keepdim=True).values, dim=-1, keepdim=True).values],
+                                  dim=-2), dim=-2, keepdim=True).values
     return (20 * torch.log10(max_val / torch.sqrt(mse))).squeeze(-1).squeeze(-1)
 
 

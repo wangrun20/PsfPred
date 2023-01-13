@@ -25,7 +25,8 @@ train_dataset:
     dataset_name: LrAndPsfFromBioSR
     gpu_id: 1  # None for cpu
     img_filter:
-        img_root: /home/wr/PycharmProjects/BioDataset/RepeatedMixed
+        img_root: /home/wr/PycharmProjects/BioDataset/Mixed
+        repeat: 70
         structure_selected: [1, 2, 3, 4]
         included_idx: [11, 100]
     hr_cropping:

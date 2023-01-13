@@ -70,6 +70,8 @@ class LrAndPsfFromBioSR(Dataset):
             self.test_kernels = self.psf_gen.generate_PSF(phaseZ=self.test_phaseZs)
             if self.hr_cropping['mode'] == 'scanning':
                 self.test_kernels = self.test_kernels.repeat(self.hr_cropping['scanning_shape'][0] * self.hr_cropping['scanning_shape'][1], 1, 1)
+        else:
+            self.names = self.names * opt['img_filter']['repeat']
         self.padding = opt['padding']
 
     def __len__(self):

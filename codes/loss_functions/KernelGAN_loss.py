@@ -1,51 +1,8 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
 from torch.autograd import Variable
 
-
-def shave_a2b(a, b):
-    """Given a big image or tensor 'a', shave it symmetrically into b's shape"""
-    # If dealing with a tensor should shave the 3rd & 4th dimension, o.w. the 1st and 2nd
-    is_tensor = (type(a) == torch.Tensor)
-    r = 2 if is_tensor else 0
-    c = 3 if is_tensor else 1
-    # Calculate the shaving of each dimension
-    shave_r, shave_c = max(0, a.shape[r] - b.shape[r]), max(0, a.shape[c] - b.shape[c])
-    return a[:, :, shave_r // 2:a.shape[r] - shave_r // 2 - shave_r % 2, shave_c // 2:a.shape[c] - shave_c // 2 - shave_c % 2] if is_tensor \
-        else a[shave_r // 2:a.shape[r] - shave_r // 2 - shave_r % 2, shave_c // 2:a.shape[c] - shave_c // 2 - shave_c % 2]
-
-
-def resize_tensor_w_kernel(im_t, k, sf=None):
-    """Convolve a tensor with a given bicubic kernel according to scale factor"""
-    # Expand dimensions to fit convolution: [out_channels, in_channels, k_height, k_width]
-    k = k.expand(im_t.shape[1], im_t.shape[1], k.shape[0], k.shape[1])
-    # Calculate padding
-    padding = (k.shape[-1] - 1) // 2
-    return F.conv2d(im_t, k, stride=round(1 / sf), padding=padding)
-
-
-def create_gaussian(size, sigma1, sigma2=-1, is_tensor=False):
-    """Return a Gaussian"""
-    func1 = [np.exp(-z ** 2 / (2 * sigma1 ** 2)) / np.sqrt(2 * np.pi * sigma1 ** 2) for z in range(-size // 2 + 1, size // 2 + 1)]
-    func2 = func1 if sigma2 == -1 else [np.exp(-z ** 2 / (2 * sigma2 ** 2)) / np.sqrt(2 * np.pi * sigma2 ** 2) for z in range(-size // 2 + 1, size // 2 + 1)]
-    return torch.FloatTensor(np.outer(func1, func2)).cuda() if is_tensor else np.outer(func1, func2)
-
-
-def create_penalty_mask(k_size, penalty_scale):
-    """Generate a mask of weights penalizing values close to the boundaries"""
-    center_size = k_size // 2 + k_size % 2
-    mask = create_gaussian(size=k_size, sigma1=k_size, is_tensor=False)
-    mask = 1 - mask / np.max(mask)
-    margin = (k_size - center_size) // 2 - 1
-    mask[margin:-margin, margin:-margin] = 0
-    return penalty_scale * mask
-
-
-def map2tensor(gray_map):
-    """Move gray maps to GPU, no normalization is done"""
-    return torch.FloatTensor(gray_map).unsqueeze(0).unsqueeze(0).cuda()
+from utils.KernelGAN_util import shave_a2b, resize_tensor_w_kernel, create_penalty_mask, map2tensor
 
 
 # noinspection PyUnresolvedReferences
@@ -54,7 +11,7 @@ class GANLoss(nn.Module):
     whether the input is real (i.e. from the input image) or fake (i.e. from the Generator)"""
 
     def __init__(self, d_last_layer_size):
-        super(GANLoss, self).__init__()
+        super().__init__()
         # The loss function is applied after the pixel-wise comparison to the true label (0/1)
         self.loss = nn.L1Loss(reduction='mean')
         # Make a shape

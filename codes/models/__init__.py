@@ -1,4 +1,6 @@
 from models.IKC import F_Model, P_Model, C_Model
+from models.MANet import MANet_Model
+from unet_based import UNetBased_Model
 
 
 def get_model(opt):
@@ -11,5 +13,9 @@ def get_model(opt):
             return P_Model(opt)
         case 'C_Model':
             return C_Model(opt)
+        case 'MANet':
+            return MANet_Model(opt)
+        case 'UNetBased':
+            return UNetBased_Model(opt)
         case _:
             raise NotImplementedError

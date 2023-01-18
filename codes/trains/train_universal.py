@@ -2,6 +2,7 @@ import argparse
 import os
 import wandb
 from tqdm import tqdm
+import numpy as np
 
 from models import get_model
 from datasets import get_dataloader
@@ -11,7 +12,7 @@ from utils import read_yaml, save_yaml
 def train(opt):
     # pass parameter
     project_name = opt['project_name']
-    experiment_path = os.path.join('./experiments', opt['experiment_name'])
+    experiment_path = os.path.join('../../experiments', opt['experiment_name'])
     max_epochs = opt['training']['max_epochs']
     validation_freq = opt['training']['validation_freq']
     checkpoint_freq = opt['training']['checkpoint_freq']
@@ -56,10 +57,10 @@ def train(opt):
                 model.optimize_parameters()
                 model.update_learning_rate(step)
 
-                logging_info = model.logging_info(epoch, step)
-                logging_info['tr_loss'] = logging_info['loss']
-                del logging_info['loss']
-                wandb.log(logging_info)
+                wandb.log({"tr_loss": model.loss.item(),
+                           'step': step,
+                           'epoch': epoch,
+                           'learning_rate': model.get_current_learning_rate()})
 
                 # validate
                 if step == 1 or step % validation_freq == 0:
@@ -68,7 +69,7 @@ def train(opt):
                         model.feed_data(data)
                         model.test()
                         va_loss.append(model.loss.item())
-                    wandb.log({"va_loss": sum(va_loss) / len(va_loss),
+                    wandb.log({"va_loss": np.mean(va_loss),
                                'step': step,
                                'epoch': epoch})
 
@@ -84,9 +85,10 @@ def train(opt):
 
 
 def main():
+    """please make sure that the pwd is .../PsfPred rather than .../PsfPred/codes/trains"""
     # set up cmd
     prog = argparse.ArgumentParser()
-    prog.add_argument('--opt', type=str, default='../../options/train_something.yaml')
+    prog.add_argument('--opt', type=str, default='./options/train_something.yaml')
     args = prog.parse_args()
 
     # start train

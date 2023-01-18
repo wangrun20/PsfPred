@@ -1,6 +1,7 @@
 import argparse
 import os
 import wandb
+import numpy as np
 from tqdm import tqdm
 from models import get_model
 from datasets import get_dataloader
@@ -10,7 +11,7 @@ from utils import read_yaml, save_yaml
 def train(opt):
     # pass parameter
     project_name = opt['project_name']
-    experiment_path = os.path.join('./experiments', opt['experiment_name'])
+    experiment_path = os.path.join('../../experiments', opt['experiment_name'])
     max_epochs = opt['training']['max_epochs']
     validation_freq = opt['training']['validation_freq']
     checkpoint_freq = opt['training']['checkpoint_freq']
@@ -60,28 +61,24 @@ def train(opt):
                 kernel_code_of_sr = P_model.pred_kernel_code.detach().cpu()
                 gt_kernel_code = F_model.pca_encoder(batch['kernel'].to(F_model.device))
 
-                logging_info = P_model.logging_info(epoch, step)
-                logging_info['tr_P_loss'] = logging_info['loss']
-                del logging_info['loss']
-                F_loss_record = []
-                C_loss_record = []
                 for _ in range(correct_step):
                     F_model.feed_data({'hr': batch['hr'],
                                        'lr': batch['lr'],
                                        'kernel_code': kernel_code_of_sr})
                     F_model.test()
-                    F_loss_record.append(F_model.loss.item())
-                    sr = F_model.sr.detach().cpu()
-                    C_model.feed_data({'sr': sr,
+                    C_model.feed_data({'sr': F_model.sr.detach().cpu(),
                                        'kernel_code_of_sr': kernel_code_of_sr,
                                        'gt_kernel_code': gt_kernel_code})
                     C_model.optimize_parameters()
                     C_model.update_learning_rate(step)
-                    C_loss_record.append(C_model.loss.item())
                     kernel_code_of_sr = C_model.pred_kernel_code.detach().cpu()
-                logging_info['tr_F_loss'] = sum(F_loss_record) / len(F_loss_record)
-                logging_info['tr_C_loss'] = sum(C_loss_record) / len(C_loss_record)
-                wandb.log(logging_info)
+
+                wandb.log({'tr_P_loss': P_model.loss.item(),
+                           'tr_F_loss': F_model.loss.item(),
+                           'tr_C_loss': C_model.loss.item(),
+                           'step': step,
+                           'epoch': epoch,
+                           'learning_rate': P_model.get_current_learning_rate()})
 
                 # validate
                 if step == 1 or step % validation_freq == 0:
@@ -94,26 +91,22 @@ def train(opt):
                         kernel_code_of_sr = P_model.pred_kernel_code.detach().cpu()
                         gt_kernel_code = F_model.pca_encoder(data['kernel'].to(F_model.device))
                         va_P_loss.append(P_model.loss.item())
-                        F_loss_record = []
-                        C_loss_record = []
                         for _ in range(correct_step):
                             F_model.feed_data({'hr': data['hr'],
                                                'lr': data['lr'],
                                                'kernel_code': kernel_code_of_sr})
                             F_model.test()
-                            F_loss_record.append(F_model.loss.item())
                             sr = F_model.sr.detach().cpu()
                             C_model.feed_data({'sr': sr,
                                                'kernel_code_of_sr': kernel_code_of_sr,
                                                'gt_kernel_code': gt_kernel_code})
                             C_model.test()
-                            C_loss_record.append(C_model.loss.item())
                             kernel_code_of_sr = C_model.pred_kernel_code.detach().cpu()
-                        va_F_loss.append(sum(F_loss_record) / len(F_loss_record))
-                        va_C_loss.append(sum(C_loss_record) / len(C_loss_record))
-                    wandb.log({'va_P_loss': va_P_loss[-1],
-                               'va_F_loss': va_F_loss[-1],
-                               'va_C_loss': va_C_loss[-1],
+                        va_F_loss.append(F_model.loss.item())
+                        va_C_loss.append(C_model.loss.item())
+                    wandb.log({'va_P_loss': np.mean(va_P_loss),
+                               'va_F_loss': np.mean(va_F_loss),
+                               'va_C_loss': np.mean(va_C_loss),
                                'step': step,
                                'epoch': epoch})
 
@@ -134,9 +127,10 @@ def train(opt):
 
 
 def main():
+    """please make sure that the pwd is .../PsfPred rather than .../PsfPred/codes/trains"""
     # set up cmd
     prog = argparse.ArgumentParser()
-    prog.add_argument('--opt', type=str, default='../../options/train_something.yaml')
+    prog.add_argument('--opt', type=str, default='./options/train_something.yaml')
     args = prog.parse_args()
 
     # start train

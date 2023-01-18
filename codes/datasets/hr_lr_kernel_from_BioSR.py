@@ -7,8 +7,8 @@ from torch.utils.data import Dataset
 import torch.nn.functional as F
 from torchvision import transforms
 
-from utils import random_rotate_crop_flip, add_poisson_gaussian_noise, get_phaseZ, normalization
-from zernike_psf import ZernikePSFGenerator
+from utils.universal_util import random_rotate_crop_flip, add_poisson_gaussian_noise, get_phaseZ, normalization
+from utils.zernike_psf import ZernikePSFGenerator
 
 
 class HrLrKernelFromBioSR(Dataset):
@@ -30,9 +30,6 @@ class HrLrKernelFromBioSR(Dataset):
         self.hr_cropping = opt['hr_cropping']
         self.hr_size = tuple(opt['hr_cropping']['hr_size'])
         self.img_signal = opt['img_signal']
-        self.is_norm_hr = opt['is_norm_hr']
-        self.is_norm_lr = opt['is_norm_lr']
-        self.is_norm_k = opt['is_norm_k']
         self.phaseZ_settings = opt['psf_settings']['phaseZ']
         self.sup_phaseZ = opt['sup_phaseZ']
         opt['psf_settings']['device'] = self.device
@@ -131,9 +128,8 @@ class HrLrKernelFromBioSR(Dataset):
             else:
                 name = self.names[idx]
 
-            hr = normalization(hr) if self.is_norm_hr else hr / 65535.0
-            lr = normalization(lr) if self.is_norm_lr else lr / 65535.0
-            kernel = normalization(kernel) if self.is_norm_k else kernel
+            hr = hr / 65535.0
+            lr = lr / 65535.0
             # hr shape: (C, H, W), lr shape: (C, H, W), kernel shape: (H, W)
             return {'hr': hr,  # (C, H, W)
                     'lr': lr,  # (C, H, W)
@@ -141,3 +137,50 @@ class HrLrKernelFromBioSR(Dataset):
                     'name': name,  # str, without postfix '.png'
                     'phaseZ': phaseZ,  # (1, 25)
                     'img_signal': img_signal}  # float
+
+
+def main():
+    opt = {'name': 'HrLrKernelFromBioSR',
+           'is_train': True,
+           'gpu_id': None,  # None for cpu
+           'repeat': 20,
+           'img_filter': {'img_root': '../../../BioDatasets/BioSR/Mixed',
+                          'structure_selected': [1, 2, 3, 4],
+                          'included_idx': [11, 100]},
+           'hr_cropping': {'mode': 'random',  # random | constant | scanning
+                           'center_pos': [-1, -1],  # [H, W], for constant
+                           'scanning_shape': [-1, -1],  # [H, W], for scanning
+                           'hr_size': [264, 264]},  # [H, W]
+           'img_signal': [100, 1000],
+           'psf_settings': {'kernel_size': 33,
+                            'NA': 1.35,
+                            'Lambda': 0.525,
+                            'RefractiveIndex': 1.33,
+                            'SigmaX': 2.0,
+                            'SigmaY': 2.0,
+                            'Pixelsize': 0.0313,
+                            'nMed': 1.33,
+                            'phaseZ': {'idx_start': 4,
+                                       'num_idx': 15,
+                                       'mode': 'gaussian',  # gaussian | uniform
+                                       'std': 0.125,  # for gaussian
+                                       'bound': 1.0}},  # for gaussian and uniform
+           'sup_phaseZ': 'all',  # all | [begin, end]
+           'padding': {'mode': 'circular',  # constant | reflect | replicate | circular
+                       'value': -1},  # for constant mode
+           'loader_settings': {'batch_size': 4,
+                               'shuffle': True,
+                               'num_workers': 3,
+                               'pin_memory': False,
+                               'drop_last': True}}
+    data_set = HrLrKernelFromBioSR(opt)
+    data_loader = torch.utils.data.DataLoader(data_set, **opt['loader_settings'])
+    print(len(data_loader), len(data_set),
+          data_set[0]['hr'].shape, data_set[0]['lr'].shape,
+          data_set[0]['kernel'].shape, data_set[0]['name'],
+          data_set[0]['phaseZ'].shape, data_set[0]['img_signal'])
+
+
+if __name__ == '__main__':
+    main()
+

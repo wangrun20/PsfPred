@@ -1,7 +1,7 @@
 import torch
 
 from models.base_model import BaseModel
-from utils import normalization
+from utils.universal_util import normalization
 
 
 class MANet_Model(BaseModel):

@@ -4,7 +4,6 @@ import functools
 
 from networks.IKC import SFTMD, Predictor, Corrector
 from networks.MANet import MANet_s1
-from networks.KernelGAN import Generator, Discriminator
 from networks.unet_based import FFTRCANResUNet
 
 
@@ -69,10 +68,8 @@ def get_network(opt):
             network = Corrector(opt)
         case 'MANet_s1':
             network = MANet_s1(opt)
-        case 'Generator':
-            network = Generator(opt)
-        case 'Discriminator':
-            network = Discriminator(opt)
+        case 'FFTRCANResUNet':
+            network = FFTRCANResUNet(opt)
         case _:
             raise NotImplementedError
     if opt['init'] is not None:

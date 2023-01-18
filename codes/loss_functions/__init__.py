@@ -1,8 +1,5 @@
 import torch.nn as nn
 
-from loss_functions.KernelGAN import GANLoss, SparsityLoss, BoundariesLoss, CentralizedLoss, SumOfWeightsLoss, \
-    DownScaleLoss
-
 
 def get_loss_function(opt):
     match opt['name']:

@@ -4,6 +4,7 @@ import torch
 import pickle
 import torch.nn.functional as F
 from torchvision import transforms
+from PIL import ImageFont, ImageDraw
 from ruamel import yaml
 
 
@@ -233,8 +234,32 @@ def overlap(x, y, pos):
     return y
 
 
+def draw_text_on_image(img, text: str, pos: tuple[int, int], font_size: int, color):
+    """
+    :param img: PIL Image
+    :param text:
+    :param pos: (width, height)
+    :param font_size:
+    :param color: int or tuple[int, ...]
+    :return: PIL Image
+    """
+    draw = ImageDraw.Draw(img)
+    if os.name == 'posix':  # Ubuntu
+        font = ImageFont.truetype('/usr/share/fonts/truetype/abyssinica/AbyssinicaSIL-Regular.ttf', size=font_size)
+    elif os.name == 'nt':  # Windows
+        font = ImageFont.truetype(r'C:\Windows\Fonts\times.ttf', size=font_size)
+    else:
+        raise
+    draw.text(pos, text, font=font, fill=color)
+
+
+def concat(tensors, row, col):
+    assert row * col == len(tensors)
+    return torch.cat([torch.cat([tensors[i * col + j] for j in range(col)], dim=-1) for i in range(row)], dim=-2)
+
+
 def main():
-    opt = read_yaml('../options/train_FFTRCANResUNet.yaml')
+    opt = read_yaml('../../options/train_FFTRCANResUNet.yaml')
     print(opt)
     pass
 

@@ -4,7 +4,7 @@ import numpy as np
 import scipy
 from torchvision import transforms
 from tqdm import tqdm
-from utils import rectangular_closure
+from utils.universal_util import rectangular_closure
 
 
 class ZernikePSFGenerator(object):

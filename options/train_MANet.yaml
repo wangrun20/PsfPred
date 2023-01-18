@@ -1,106 +1,118 @@
-project_name: init_kernel_net
-experiment_name: train_for_BioSR_11pZ_norm_Gstd0.125b1_CEMF_noise1e2to1e3_MANet
+project_name: 'MANet'
+experiment_name: 'MANet-0119' # TODO: may be updated
+
+training:
+  max_epochs: 10000
+  validation_freq: 1000 # TODO: may be updated
+  checkpoint_freq: 2000 # TODO: may be updated
+  wandb_id: 'ad465hf4' # TODO: may be updated
 
 model:
-    network: MANet_s1
+  name: 'MANet'
+  gpu: True
+  is_data_parallel: True
+  network:
+    name: 'MANet_s1'
     in_nc: 1
     scale: 1
     kernel_size: 33
-    manet_nf: 256
+    manet_nf: 128
     manet_nb: 1
     split: 2
+    init: ['xavier_normal', 0.1, 'normal']
+  optimizer:
+    name: 'Adam'
+    lr: 2e-4
+    weight_decay: 1e-8
+  scheduler:
+    name: 'CosineAnnealingWarmRestarts'
+    T_0: 10000
+    T_mult: 1.25
+    eta_min: 1e-7
+  loss_function:
+    name: 'L1'
+  checkpoint:
+    network: './'
+    training_state: ~
 
-train_settings:
-    is_data_parallel: True
-    model_gpu_id: 0  # for no data_parallel
-    max_epoch: 1000
-    learning_rate: 2e-4
-    loss: L1  # L1 | L2
-    imgs_per_val_and_save: 2e3
-    imgs_per_scheduler_step: 5e3
-    resume: auto
+train_data:
+  name: 'HrLrKernelFromBioSR'
+  is_train: True
+  gpu_id: ~
+  repeat: 64  # ~ for no repeat
+  img_filter:
+    img_root: '../BioDataset/Mixed'
+    structure_selected: [1, 2, 3, 4]
+    included_idx: [11, 100]
+  hr_cropping:
+    mode: 'random' # TODO: may be updated
+    center_pos: [-1, -1]
+    scanning_shape: [-1, -1]
+    hr_size: [264, 264] # TODO: may be updated
+  img_signal: [100, 1000]
+  psf_settings:
+      kernel_size: 33
+      NA: 1.35
+      Lambda: 0.525
+      RefractiveIndex: 1.33
+      SigmaX: 2.0
+      SigmaY: 2.0
+      Pixelsize: 0.0313
+      nMed: 1.33
+      phaseZ:
+          idx_start: 4
+          num_idx: 15
+          mode: 'gaussian'
+          std: 0.125
+          bound: 1.0
+  sup_phaseZ: 'all'  # all | [begin, end]
+  padding:
+      mode: 'circular'  # constant | reflect | replicate | circular
+      value: -1  # for constant mode
+  loader_settings:
+    batch_size: 2 # TODO: may be updated
+    shuffle: True
+    num_workers: 4
+    pin_memory: False
+    drop_last: True
 
-train_dataset:
-    is_train: true
-    dataset_name: LrAndPsfFromBioSR
-    gpu_id: 1  # None for cpu
-    img_filter:
-        img_root: /home/wr/PycharmProjects/BioDataset/Mixed
-        repeat: 70
-        structure_selected: [1, 2, 3, 4]
-        included_idx: [11, 100]
-    hr_cropping:
-        mode: random  # random | constant | scanning
-        center_pos: [-1, -1]  # [H, W], for constant
-        scanning_shape: [-1, -1]  # [H, W], for scanning
-    lr_size: [264, 264]  # [H, W]
-    img_signal: [100, 1000]
-    is_norm_lr: True
-    is_norm_k: True
-    psf_settings:
-        kernel_size: 33
-        NA: 1.35
-        Lambda: 0.525
-        RefractiveIndex: 1.33
-        SigmaX: 2.0
-        SigmaY: 2.0
-        Pixelsize: 0.0313
-        nMed: 1.33
-        phaseZ:
-            idx_start: 4
-            num_idx: 11
-            mode: gaussian  # gaussian | uniform
-            std: 0.125  # for gaussian
-            bound: 1.0  # for gaussian and uniform
-    sup_phaseZ: all  # all | [begin, end]
-    padding:
-        mode: circular  # constant | reflect | replicate | circular
-        value: 0  # for constant mode
-    loader_settings:
-        batch_size: 2
-        shuffle: true
-        num_workers: 7
-        pin_memory: false
-        drop_last: true
-
-test_dataset:
-    is_train: false
-    dataset_name: LrAndPsfFromBioSR
-    gpu_id:  # None for cpu
-    img_filter:
-        img_root: /home/wr/PycharmProjects/BioDataset/Mixed
-        structure_selected: [1, 2, 3, 4]
-        included_idx: [1, 10]
-    hr_cropping:
-        mode: random  # random | constant | scanning
-        center_pos: [-1, -1]  # [H, W], for constant
-        scanning_shape: [-1, -1]  # [H, W], for scanning
-    lr_size: [264, 264]  # [H, W]
-    img_signal: [1000]
-    is_norm_lr: True
-    is_norm_k: True
-    psf_settings:
-        kernel_size: 33
-        NA: 1.35
-        Lambda: 0.525
-        RefractiveIndex: 1.33
-        SigmaX: 2.0
-        SigmaY: 2.0
-        Pixelsize: 0.0313
-        nMed: 1.33
-        phaseZ:
-            idx_start: 4
-            num_idx: 11
-            mode: gaussian  # gaussian | uniform
-            std: 0.125  # for gaussian
-            bound: 1.0  # for gaussian and uniform
-    sup_phaseZ: all  # all | [begin, end]
-    padding:
-        mode: circular  # constant | reflect | replicate | circular
-        value: 0  # for constant mode
-    loader_settings:
-        batch_size: 1
-        shuffle: false
-        num_workers: 0
-        pin_memory: false
-        drop_last: false
+test_data:
+  name: 'HrLrKernelFromBioSR'
+  is_train: False
+  gpu_id: ~
+  repeat: ~  # ~ for no repeat
+  img_filter:
+    img_root: '../BioDataset/Mixed'
+    structure_selected: [1, 2, 3, 4]
+    included_idx: [1, 10]
+  hr_cropping:
+    mode: 'random' # TODO: may be updated
+    center_pos: [-1, -1]
+    scanning_shape: [-1, -1]
+    hr_size: [264, 264] # TODO: may be updated
+  img_signal: [1000]
+  psf_settings:
+      kernel_size: 33
+      NA: 1.35
+      Lambda: 0.525
+      RefractiveIndex: 1.33
+      SigmaX: 2.0
+      SigmaY: 2.0
+      Pixelsize: 0.0313
+      nMed: 1.33
+      phaseZ:
+          idx_start: 4
+          num_idx: 15
+          mode: 'gaussian'
+          std: 0.125
+          bound: 1.0
+  sup_phaseZ: 'all'  # all | [begin, end]
+  padding:
+      mode: 'circular'  # constant | reflect | replicate | circular
+      value: -1  # for constant mode
+  loader_settings:
+    batch_size: 1
+    shuffle: False
+    num_workers: 0
+    pin_memory: False
+    drop_last: False

@@ -1,0 +1,117 @@
+testing:
+  correct_step: 7
+  show_kernel: True
+  show_kernel_code_psnr: True
+  save_dir: './results/IKC-01xx-pca65' # TODO: may be updated
+
+F_model:
+  name: 'F_Model'
+  gpu: True
+  is_data_parallel: False
+  pca_mean: './pca_mean.pth'
+  pca_matrix: './pca_matrix65.pth'
+  network:
+    name: 'SFTMD'
+    in_nc: 1
+    out_nc: 1
+    nf: 64
+    nb: 16
+    scale: 1
+    input_para: 65
+    min: 0.0
+    max: 1.0
+    init: ~
+  optimizer:
+    name: ~
+  scheduler:
+    name: ~
+  loss_function:
+    name: ~
+  checkpoint:
+    network: './' # TODO: may be updated
+    training_state: ~
+
+P_model:
+  name: 'P_Model'
+  gpu: True
+  is_data_parallel: False
+  pca_mean: './pca_mean.pth'
+  pca_matrix: './pca_matrix65.pth'
+  network:
+    name: 'Predictor'
+    in_nc: 1
+    nf: 64
+    code_len: 65
+    use_bias: True
+    init: ~
+  optimizer:
+    name: ~
+  scheduler:
+    name: ~
+  loss_function:
+    name: ~
+  checkpoint:
+    network: './' # TODO: may be updated
+    training_state: ~
+
+C_model:
+  name: 'C_Model'
+  gpu: True
+  is_data_parallel: False
+  network:
+    name: 'Corrector'
+    in_nc: 1
+    nf: 64
+    code_len: 65
+    use_bias: True
+    init: ~
+  optimizer:
+    name: ~
+  scheduler:
+    name: ~
+  loss_function:
+    name: ~
+  checkpoint:
+    network: './' # TODO: may be updated
+    training_state: ~
+
+test_data:
+  name: 'HrLrKernelFromBioSR'
+  is_train: False
+  gpu_id: ~
+  repeat: ~
+  img_filter:
+    img_root: '../BioDataset/Mixed'
+    structure_selected: [1, 2, 3, 4]
+    included_idx: [1, 10]
+  hr_cropping:
+    mode: ~  # ~ for no aug # TODO: may be updated
+    center_pos: [-1, -1]
+    scanning_shape: [-1, -1]
+    hr_size: [256, 256] # TODO: may be updated
+  img_signal: [1000]
+  psf_settings:
+      kernel_size: 33
+      NA: 1.35
+      Lambda: 0.525
+      RefractiveIndex: 1.33
+      SigmaX: 2.0
+      SigmaY: 2.0
+      Pixelsize: 0.0313
+      nMed: 1.33
+      phaseZ:
+          idx_start: 4
+          num_idx: 15
+          mode: 'gaussian'
+          std: 0.125
+          bound: 1.0
+  sup_phaseZ: 'all'  # all | [begin, end]
+  padding:
+      mode: 'circular'  # constant | reflect | replicate | circular
+      value: -1  # for constant mode
+  loader_settings:
+    batch_size: 1
+    shuffle: False
+    num_workers: 0
+    pin_memory: False
+    drop_last: False

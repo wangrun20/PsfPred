@@ -1,97 +1,11 @@
-import os
 import torch
 import torch.nn.functional as F
-import numpy as np
-import torchvision.transforms
-import scipy.io as sio
-from scipy.ndimage import measurements, interpolation
+from utils.KernelGAN_util import save_final_kernel, run_zssr, post_process_k
 
-import loss_functions
-from networks import get_network
-
-
-def analytic_kernel(k):
-    """Calculate the X4 kernel from the X2 kernel (for proof see appendix in paper)"""
-    k_size = k.shape[0]
-    # Calculate the big kernels size
-    big_k = np.zeros((3 * k_size - 2, 3 * k_size - 2))
-    # Loop over the small kernel to fill the big one
-    for r in range(k_size):
-        for c in range(k_size):
-            big_k[2 * r:2 * r + k_size, 2 * c:2 * c + k_size] += k[r, c] * k
-    # Crop the edges of the big kernel to ignore very small values and increase run time of SR
-    crop = k_size // 2
-    cropped_big_k = big_k[crop:-crop, crop:-crop]
-    # Normalize to 1
-    return cropped_big_k / cropped_big_k.sum()
-
-
-def save_final_kernel(k_2, conf):
-    """saves the final kernel and the analytic kernel to the results folder"""
-    sio.savemat(os.path.join(conf.output_dir_path, '%s_kernel_x2.mat' % os.path.basename(conf.img_name)),
-                {'Kernel': k_2})
-    k = torch.from_numpy(k_2)
-    k = (k - torch.min(k)) / (torch.max(k) - torch.min(k))
-    k = torchvision.transforms.ToPILImage()(k)
-    k.save(os.path.join(conf.output_dir_path, '%s_kernel_x2.png' % os.path.basename(conf.img_name)))
-    if conf.X4:
-        k_4 = analytic_kernel(k_2)
-        sio.savemat(os.path.join(conf.output_dir_path, '%s_kernel_x4.mat' % conf.img_name), {'Kernel': k_4})
-
-
-def move2cpu(d):
-    """Move data from gpu to cpu"""
-    return d.detach().cpu().float().numpy()
-
-
-def kernel_shift(kernel, sf):
-    # There are two reasons for shifting the kernel :
-    # 1. Center of mass is not in the center of the kernel which creates ambiguity. There is no possible way to know
-    #    the degradation process included shifting, so we always assume center of mass is center of the kernel.
-    # 2. We further shift kernel center so that top left result pixel corresponds to the middle of the sfXsf first
-    #    pixels. Default is for odd size to be in the middle of the first pixel and for even sized kernel to be at the
-    #    top left corner of the first pixel. that is why different shift size needed between odd and even size.
-    # Given that these two conditions are fulfilled, we are happy and aligned, the way to test it is as follows:
-    # The input image, when interpolated (regular bicubic) is exactly aligned with ground truth.
-
-    # First calculate the current center of mass for the kernel
-    current_center_of_mass = measurements.center_of_mass(kernel)
-
-    # The second term ("+ 0.5 * ....") is for applying condition 2 from the comments above
-    wanted_center_of_mass = np.array(kernel.shape) // 2 + 0.5 * (np.array(sf) - (np.array(kernel.shape) % 2))
-    # Define the shift vector for the kernel shifting (x,y)
-    shift_vec = wanted_center_of_mass - current_center_of_mass
-    # Before applying the shift, we first pad the kernel so that nothing is lost due to the shift
-    # (biggest shift among dims + 1 for safety)
-    kernel = np.pad(kernel, np.int(np.ceil(np.max(np.abs(shift_vec)))) + 1, 'constant')
-
-    # Finally shift the kernel and return
-    kernel = interpolation.shift(kernel, shift_vec)
-
-    return kernel
-
-
-def zeroize_negligible_val(k, n):
-    """Zeroize values that are negligible w.r.t to values in k"""
-    # Sort K's values in order to find the n-th largest
-    k_sorted = np.sort(k.flatten())
-    # Define the minimum value as the 0.75 * the n-th the largest value
-    k_n_min = 0.75 * k_sorted[-n - 1]
-    # Clip values lower than the minimum value
-    filtered_k = np.clip(k - k_n_min, a_min=0, a_max=100)
-    # Normalize to sum to 1
-    return filtered_k / filtered_k.sum()
-
-
-def post_process_k(k, n):
-    """Move the kernel to the CPU, eliminate negligible values, and centralize k"""
-    k = move2cpu(k)
-    # Zeroize negligible values
-    significant_k = zeroize_negligible_val(k, n)
-    # Force centralization on the kernel
-    centralized_k = kernel_shift(significant_k, sf=2)
-    # return shave_a2b(centralized_k, k)
-    return centralized_k
+from loss_functions.KernelGAN_loss import GANLoss, SparsityLoss, BoundariesLoss, CentralizedLoss, SumOfWeightsLoss, \
+    DownScaleLoss
+from networks import init_weights
+from networks.KernelGAN import Generator, Discriminator
 
 
 class KernelGAN(object):
@@ -107,28 +21,30 @@ class KernelGAN(object):
         self.opt = opt
 
         # Define the GAN
-        self.G = get_network(opt['net_G']).cuda()
-        self.D = get_network(opt['net_D']).cuda()
+        self.G = Generator(opt).cuda()
+        self.D = Discriminator(opt).cuda()
+        init_weights(self.G, 'xavier_normal', 0.1, 'normal')
+        init_weights(self.D, 'xavier_normal', 0.1, 'normal')
 
         # Calculate D's input & output shape according to the shaving done by the networks
         self.d_input_shape = self.G.output_size
         self.d_output_shape = self.d_input_shape - self.D.forward_shave
 
         # Input tensors
-        self.g_input = torch.FloatTensor(1, 3, opt['net_G']['input_crop_size'], opt['net_G']['input_crop_size']).cuda()
+        self.g_input = torch.FloatTensor(1, 3, opt['input_crop_size'], opt['input_crop_size']).cuda()
         self.d_input = torch.FloatTensor(1, 3, self.d_input_shape, self.d_input_shape).cuda()
 
         # The kernel G is imitating
         self.curr_k = torch.FloatTensor(opt['G_kernel_size'], opt['G_kernel_size']).cuda()
 
         # Losses
-        self.GAN_loss_layer = loss_functions.GANLoss(d_last_layer_size=self.d_output_shape).cuda()
-        self.bicubic_loss = loss_functions.DownScaleLoss(scale_factor=opt['net_G']['scale_factor']).cuda()
-        self.sum2one_loss = loss_functions.SumOfWeightsLoss().cuda()
-        self.boundaries_loss = loss_functions.BoundariesLoss(k_size=opt['G_kernel_size']).cuda()
-        self.centralized_loss = loss_functions.CentralizedLoss(k_size=opt['G_kernel_size'],
-                                                               scale_factor=opt['net_G']['scale_factor']).cuda()
-        self.sparse_loss = loss_functions.SparsityLoss().cuda()
+        self.GAN_loss_layer = GANLoss(d_last_layer_size=self.d_output_shape).cuda()
+        self.bicubic_loss = DownScaleLoss(scale_factor=opt['scale_factor']).cuda()
+        self.sum2one_loss = SumOfWeightsLoss().cuda()
+        self.boundaries_loss = BoundariesLoss(k_size=opt['G_kernel_size']).cuda()
+        self.centralized_loss = CentralizedLoss(k_size=opt['G_kernel_size'],
+                                                               scale_factor=opt['scale_factor']).cuda()
+        self.sparse_loss = SparsityLoss().cuda()
         self.loss_bicubic = 0
 
         # Define loss function
@@ -209,10 +125,52 @@ class KernelGAN(object):
         final_kernel = post_process_k(self.curr_k, n=self.opt['n_filtering'])
         save_final_kernel(final_kernel, self.opt)
         print('KernelGAN estimation complete!')
-        if self.opt['do_ZSSR']:
-            # run_zssr(final_kernel, self.opt)
-            raise NotImplementedError('ZSSR has not been implemented')
+        run_zssr(final_kernel, self.opt)
         print('FINISHED RUN (see --%s-- folder)\n' % self.opt['output_dir_path'] + '*' * 60 + '\n\n')
+
+
+class Learner(object):
+    # Default hyper-parameters
+    lambda_update_freq = 200
+    bic_loss_to_start_change = 0.4
+    lambda_bicubic_decay_rate = 100.
+    update_l_rate_freq = 750
+    update_l_rate_rate = 10.
+    lambda_sparse_end = 5
+    lambda_centralized_end = 1
+    lambda_bicubic_min = 5e-6
+
+    def __init__(self):
+        self.bic_loss_counter = 0
+        self.similar_to_bicubic = False  # Flag indicating when the bicubic similarity is achieved
+        self.insert_constraints = True  # Flag is switched to false once constraints are added to the loss
+
+    def update(self, iteration, gan):
+        if iteration == 0:
+            return
+        # Update learning rate every update_l_rate freq
+        if iteration % self.update_l_rate_freq == 0:
+            for params in gan.optimizer_G.param_groups:
+                params['lr'] /= self.update_l_rate_rate
+            for params in gan.optimizer_D.param_groups:
+                params['lr'] /= self.update_l_rate_rate
+
+        # Until similar to bicubic is satisfied, don't update any other lambdas
+        if not self.similar_to_bicubic:
+            if gan.loss_bicubic < self.bic_loss_to_start_change:
+                if self.bic_loss_counter >= 2:
+                    self.similar_to_bicubic = True
+                else:
+                    self.bic_loss_counter += 1
+            else:
+                self.bic_loss_counter = 0
+        # Once similar to bicubic is satisfied, consider inserting other constraints
+        elif iteration % self.lambda_update_freq == 0 and gan.lambda_bicubic > self.lambda_bicubic_min:
+            gan.lambda_bicubic = max(gan.lambda_bicubic / self.lambda_bicubic_decay_rate, self.lambda_bicubic_min)
+            if self.insert_constraints and gan.lambda_bicubic < 5e-3:
+                gan.lambda_centralized = self.lambda_centralized_end
+                gan.lambda_sparse = self.lambda_sparse_end
+                self.insert_constraints = False
 
 
 def main():

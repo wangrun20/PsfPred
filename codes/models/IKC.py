@@ -1,7 +1,7 @@
 import torch
 
 from models.base_model import BaseModel
-from utils import pickle_load, PCA_Encoder
+from utils.universal_util import pickle_load, PCA_Encoder
 
 
 class F_Model(BaseModel):

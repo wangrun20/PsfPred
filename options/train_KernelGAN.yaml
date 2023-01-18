@@ -1,0 +1,22 @@
+input_image_root: './data/test_images' # TODO: may be updated
+output_dir_path: './results/KernelGAN' # TODO: may be updated
+img_max_val: 65535.0
+G_kernel_size: 33
+noise_scale: 40
+real_image: False
+gpu_id: 0
+max_iters: 3000
+n_filtering: 40
+do_ZSSR: false
+X4: false
+scale_factor: 1.0
+img_channel: 1
+input_crop_size: 64
+G_structure: [7, 7, 5, 5, 5, 3, 3, 3, 3, 1, 1, 1]
+G_chan: 64
+D_chan: 64
+D_kernel_size: 7
+D_n_layers: 7
+beta1: 0.5
+g_lr: 0.0002
+d_lr: 0.0002

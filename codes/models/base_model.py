@@ -121,12 +121,6 @@ class BaseModel(object):
         m = sum(map(lambda x: x.numel(), filter(lambda p: p.requires_grad, network.parameters())))
         return s, n, m
 
-    def logging_info(self, epoch, step):
-        return {"loss": self.loss.item() if self.loss is not None else None,
-                'step': step,
-                'epoch': epoch,
-                'learning_rate': self.get_current_learning_rate()}
-
     def save_network(self, save_path):
         network = self.unpack_network()
         torch.save(network.state_dict(), save_path)

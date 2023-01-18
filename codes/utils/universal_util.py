@@ -234,7 +234,7 @@ def overlap(x, y, pos):
     return y
 
 
-def draw_text_on_image(img, text: str, pos: tuple[int, int], font_size: int, color):
+def draw_text_on_image(img, text: str, pos: tuple, font_size: int, color):
     """
     :param img: PIL Image
     :param text:

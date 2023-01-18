@@ -2,14 +2,13 @@ import torch.nn as nn
 
 
 def get_loss_function(opt):
-    match opt['name']:
-        case None:
-            return None
-        case 'CrossEntropyLoss':
-            return nn.CrossEntropyLoss()
-        case 'L1':
-            return nn.L1Loss()
-        case 'MSE':
-            return nn.MSELoss()
-        case _:
-            raise NotImplementedError
+    if opt['name'] is None:
+        return None
+    elif opt['name'] == 'CrossEntropyLoss':
+        return nn.CrossEntropyLoss()
+    elif opt['name'] == 'L1':
+        return nn.L1Loss()
+    elif opt['name'] == 'MSE':
+        return nn.MSELoss()
+    else:
+        raise NotImplementedError

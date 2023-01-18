@@ -5,8 +5,8 @@ model:
   name: 'UNetBased'
   gpu: True
   is_data_parallel: False
-  norm_lr: False
-  norm_k: False
+  norm_lr: True # TODO: may be updated
+  norm_k: True # TODO: may be updated
   network:
     name: 'FFTRCANResUNet'
     in_channels: 1

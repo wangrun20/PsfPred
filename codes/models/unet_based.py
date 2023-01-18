@@ -21,11 +21,12 @@ class UNetBased_Model(BaseModel):
         self.network.eval()
         with torch.no_grad():
             self.pred_kernel = self.network(normalization(self.lr) if self.norm_lr else self.lr)
+            self.loss = self.loss_function(self.pred_kernel.squeeze(1),
+                                           normalization(self.gt_kernel) if self.norm_k else self.gt_kernel) \
+                if self.loss_function is not None else None
             if self.norm_k:
                 self.pred_kernel = torch.clamp(self.pred_kernel, min=0., max=1.)
                 self.pred_kernel /= torch.sum(self.pred_kernel)
-            self.loss = self.loss_function(self.pred_kernel.squeeze(1), self.gt_kernel) \
-                if self.loss_function is not None else None
         self.network.train()
 
     def optimize_parameters(self):

@@ -59,19 +59,18 @@ def init_weights(net, init_conv_linear_type='orthogonal', gain=0.2, init_bn_type
 
 
 def get_network(opt):
-    match opt['name']:
-        case 'SFTMD':
-            network = SFTMD(opt)
-        case 'Predictor':
-            network = Predictor(opt)
-        case 'Corrector':
-            network = Corrector(opt)
-        case 'MANet_s1':
-            network = MANet_s1(opt)
-        case 'FFTRCANResUNet':
-            network = FFTRCANResUNet(opt)
-        case _:
-            raise NotImplementedError
+    if opt['name'] == 'SFTMD':
+        network = SFTMD(opt)
+    elif opt['name'] == 'Predictor':
+        network = Predictor(opt)
+    elif opt['name'] == 'Corrector':
+        network = Corrector(opt)
+    elif opt['name'] == 'MANet_s1':
+        network = MANet_s1(opt)
+    elif opt['name'] == 'FFTRCANResUNet':
+        network = FFTRCANResUNet(opt)
+    else:
+        raise NotImplementedError
     if opt['init'] is not None:
         init_weights(network, init_conv_linear_type=opt['init'][0], gain=opt['init'][1], init_bn_type=opt['init'][2])
     return network

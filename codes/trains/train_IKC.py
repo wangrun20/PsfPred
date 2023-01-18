@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 from models import get_model
 from datasets import get_dataloader
-from utils import read_yaml, save_yaml
+from utils.universal_util import read_yaml, save_yaml
 
 
 def train(opt):

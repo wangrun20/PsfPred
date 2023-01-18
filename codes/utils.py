@@ -2,7 +2,7 @@ import os
 import math
 import torch
 import pickle
-
+import torch.nn.functional as F
 from torchvision import transforms
 from ruamel import yaml
 
@@ -78,13 +78,16 @@ def remove_excess(root, keep, postfix='_model.pth'):
     return num_removed
 
 
-def calculate_PSNR(img1, img2, border=0, max_val=65535.0):
+def calculate_PSNR(img1, img2, border=0, max_val=None):
     """
     input image shape should be torch.Tensor(..., H, W)
     border mean how many pixels of the edge will be abandoned. default: 0
     """
     assert len(img1.shape) >= 2 and len(img2.shape) >= 2, 'Input images must be in the shape of (..., H, W).'
-    assert img1.shape == img2.shape, f'Input images must have the same dimensions, but got {img1.shape} and {img2.shape}'
+    assert img1.shape == img2.shape, f'input images should have the same dimensions, ' \
+                                     f'but got {img1.shape} and {img2.shape}'
+    if max_val == 'auto':
+        max_val = max(torch.max(img1).item(), torch.max(img2).item())
     H, W = img1.shape[-2:]
     img1 = img1[..., border:H - border, border:W - border].type(torch.float32)
     img2 = img2[..., border:H - border, border:W - border].type(torch.float32)
@@ -178,8 +181,60 @@ def save_gray_img(x, path, norm=True):
     transforms.ToPILImage()(x).save(path)
 
 
+class PCA_Encoder(object):
+    def __init__(self, weight, mean):
+        self.weight = weight  # l**2 x h
+        self.mean = mean  # 1 x l**2
+        self.size = self.weight.size()
+
+    def __call__(self, batch_kernel):
+        """
+        :param batch_kernel: shape (B, l, l)
+        :return: shape (B, h)
+        """
+        B, H, W = batch_kernel.size()  # (B, l, l)
+        return torch.bmm(batch_kernel.view((B, 1, H * W)) - self.mean,
+                         self.weight.expand((B, ) + self.size)).view((B, -1))
+
+
+class PCA_Decoder(object):
+    def __init__(self, weight, mean):
+        self.weight = weight  # l**2 x h
+        self.mean = mean  # 1 x l**2
+        self.l = int(self.weight.shape[0] ** 0.5)
+        self.size = weight.T.size()
+        assert self.l * self.l == self.weight.shape[0]
+
+    def __call__(self, batch_kernel_code):
+        """
+        :param batch_kernel_code: shape (B, h)
+        :return: shape (B, l, l)
+        """
+        B, h = batch_kernel_code.shape
+        return (torch.bmm(batch_kernel_code.view((B, 1, h)), self.weight.T.expand((B, ) + self.size)) + self.mean).view(
+            (B, self.l, self.l))
+
+
+def nearest_itpl(x, size):
+    """nearest interpolation"""
+    assert len(size) == 2
+    if len(x.shape) == 4:
+        return F.interpolate(x, size, mode='nearest')
+    if len(x.shape) == 3:
+        return F.interpolate(x.unsqueeze(0), size, mode='nearest').squeeze(0)
+    if len(x.shape) == 2:
+        return F.interpolate(x.unsqueeze(0).unsqueeze(0), size, mode='nearest').squeeze(0).squeeze(0)
+
+
+def overlap(x, y, pos):
+    """put x on y, and x[..., 0, 0] at pos"""
+    y = y.clone().detach()
+    y[..., pos[-2]:pos[-2] + x.shape[-2], pos[-1]:pos[-1] + x.shape[-1]] = x
+    return y
+
+
 def main():
-    opt = read_yaml('options/train_FFTRCANResUNet.yaml')
+    opt = read_yaml('../options/train_FFTRCANResUNet.yaml')
     print(opt)
     pass
 

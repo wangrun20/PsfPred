@@ -10,7 +10,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from torchvision.transforms import functional
 from zernike_psf import ZernikePSFGenerator
-from general_utils import random_rotate_crop_flip, add_poisson_gaussian_noise, normalization, get_phaseZ
+from utils import random_rotate_crop_flip, add_poisson_gaussian_noise, normalization, get_phaseZ
 
 
 def get_dataloader(opt):

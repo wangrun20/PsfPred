@@ -269,6 +269,7 @@ class ResUNet(nn.Module):
         out_channels = opt['out_channels']
         self.num_pixel_stack_layer = opt['num_pixel_stack_layer']
         self.num_down_up = opt['num_down_up']
+        assert self.num_down_up in (4, 5, 6)
 
         self.in_conv = ResDoubleConv(in_channels, 64)
         self.down1 = ResDown(64, 128)
@@ -323,6 +324,7 @@ class FFTResUNet(nn.Module):
         in_channels = opt['in_channels']
         encoder_channels = opt['encoder_channels']
         _ = opt['out_channels'], opt['num_pixel_stack_layer'], opt['num_down_up']
+        assert opt['num_down_up'] in (4, 5, 6)
         assert encoder_channels % 2 == 0
         self.in_conv_relu1 = ConvReLU(in_channels, encoder_channels // 2)
         self.in_conv_relu2 = ConvReLU(in_channels, encoder_channels // 2)
@@ -347,6 +349,7 @@ class FFTRCANResUNet(nn.Module):
         encoder_channels = opt['encoder_channels']
         _ = opt['in_channels'], opt['out_channels'], opt['num_rg'], opt['num_rcab'], opt['reduction'], \
             opt['num_down_up'], opt['num_pixel_stack_layer']
+        assert opt['num_down_up'] in (4, 5, 6)
         assert encoder_channels % 2 == 0
 
         rcan_opt = deepcopy(opt)

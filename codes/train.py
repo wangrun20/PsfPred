@@ -6,7 +6,7 @@ import wandb
 from tqdm import tqdm
 from wandb.util import generate_id
 
-from general_utils import read_yaml, remove_excess, pickle_dump, pickle_load
+from utils import read_yaml, remove_excess, pickle_dump, pickle_load
 from dataset import get_dataloader
 from models import get_model, restore_checkpoint, \
     FFTResUNet, FFTRCANResUNet, FFTOnlyRCANResUNet, FreqDomainRCANResUNet, \
@@ -20,7 +20,7 @@ def train(opt_path: str):
 
     # pass parameter
     project_name = opt['project_name']
-    experiment_path = os.path.join('./experiments', opt['experiment_name'])
+    experiment_path = os.path.join('../experiments', opt['experiment_name'])
     train_settings = opt['train_settings']
     is_data_parallel = train_settings['is_data_parallel']
     model_gpu_id = train_settings['model_gpu_id']

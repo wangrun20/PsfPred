@@ -1,13 +1,13 @@
 import argparse
 import torch
 import torch.nn.functional as F
-
+import os
 from torchvision import transforms
 from torchstat import stat
 from fvcore.nn import FlopCountAnalysis, parameter_count_table
 from PIL import ImageFont, ImageDraw
 from tqdm import tqdm
-from general_utils import calculate_PSNR, normalization, read_yaml, complex_to_reals, one_plus_log, add_poisson_gaussian_noise
+from utils import calculate_PSNR, normalization, read_yaml, complex_to_reals, one_plus_log, add_poisson_gaussian_noise
 from dataset import get_dataloader
 from models import get_model, restore_checkpoint, \
     FFTResUNet, FFTRCANResUNet, FFTOnlyRCANResUNet, FreqDomainRCANResUNet, \
@@ -109,7 +109,12 @@ def test_on_given_net_data(net, data_loader, save_path, loss_func=torch.nn.MSELo
                 result = (result * 65535.0).to(torch.int32)
                 result = transforms.ToPILImage()(result)
                 draw_ks_lr = ImageDraw.Draw(result)
-                my_font = ImageFont.truetype('/usr/share/fonts/truetype/abyssinica/AbyssinicaSIL-Regular.ttf', size=16)
+                if os.name == 'posix':
+                    my_font = ImageFont.truetype('/usr/share/fonts/truetype/abyssinica/AbyssinicaSIL-Regular.ttf', size=16)
+                elif os.name == 'nt':
+                    my_font = ImageFont.truetype(r'C:\Windows\Fonts\times.ttf', size=16)
+                else:
+                    raise
                 draw_ks_lr.text((0, 0), batch['name'][0], font=my_font, fill=65535)
                 if net_type == MANet_s1:
                     draw_ks_lr.text((lr.shape[-1], 0), f'{min_heat:5.2f}~{max_heat:5.2f}', font=my_font, fill=65535)

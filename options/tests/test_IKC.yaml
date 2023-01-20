@@ -1,8 +1,10 @@
 testing:
+  is_save: False # TODO: may be updated
   correct_step: 7
   show_kernel: True
   show_kernel_code_psnr: True
   save_dir: './results/IKC-0119-pca65-x512' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-15pz.pth' # TODO: may be updated
 
 F_model:
   name: 'F_Model'

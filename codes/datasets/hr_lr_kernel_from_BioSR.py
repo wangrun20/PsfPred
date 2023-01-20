@@ -44,7 +44,7 @@ class HrLrKernelFromBioSR(Dataset):
                           and (int(file[4:6]) in self.included_idx))]
 
         if not self.is_train:
-            self.hrs = torch.cat([self.get_aug_hr(i) for i in range(len(self))], dim=-3)  # hrs are fixed when testing
+            self.hrs = torch.cat([self.get_aug_hr(i // self.repeat) for i in range(len(self))], dim=-3)  # hrs are fixed when testing
             self.test_phaseZs = get_phaseZ(self.phaseZ_settings, batch_size=len(self.names), device=self.device)
             self.test_kernels = self.psf_gen.generate_PSF(phaseZ=self.test_phaseZs)
             if self.hr_cropping['mode'] == 'scanning':

@@ -19,7 +19,10 @@ class DataGenerator(Dataset):
         self.d_output_shape = self.d_input_shape - gan.D.forward_shave
 
         # Read input image
-        self.input_image = read_image(opt['input_image_path'], opt['img_channel']) / opt['img_max_val']
+        if 'input_image' not in opt.keys():
+            self.input_image = read_image(opt['input_image_path'], opt['img_channel']) / opt['img_max_val']
+        else:
+            self.input_image = opt['input_image']
         self.shave_edges(scale_factor=opt['scale_factor'], real_image=opt['real_image'])
 
         self.in_rows, self.in_cols = self.input_image.shape[0:2]

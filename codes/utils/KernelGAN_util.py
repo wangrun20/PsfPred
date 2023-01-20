@@ -136,7 +136,7 @@ def post_process_k(k, n):
     # Force centralization on the kernel
     centralized_k = kernel_shift(significant_k, sf=2)
     # return shave_a2b(centralized_k, k)
-    return centralized_k
+    return significant_k, centralized_k
 
 
 def zeroize_negligible_val(k, n):

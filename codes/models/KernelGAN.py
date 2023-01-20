@@ -122,11 +122,13 @@ class KernelGAN(object):
         self.optimizer_D.step()
 
     def finish(self):
-        final_kernel = post_process_k(self.curr_k, n=self.opt['n_filtering'])
-        save_final_kernel(final_kernel, self.opt)
+        no_shift_kernel, final_kernel = post_process_k(self.curr_k, n=self.opt['n_filtering'])
+        # save_final_kernel(final_kernel, self.opt)
+        save_final_kernel(no_shift_kernel, self.opt)
         print('KernelGAN estimation complete!')
         run_zssr(final_kernel, self.opt)
         print('FINISHED RUN (see --%s-- folder)\n' % self.opt['output_dir_path'] + '*' * 60 + '\n\n')
+        return no_shift_kernel, final_kernel
 
 
 class Learner(object):

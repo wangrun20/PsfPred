@@ -2,11 +2,13 @@ import argparse
 import os
 from tqdm import tqdm
 import torch
+from torchvision import transforms
 import numpy as np
 
 from models.KernelGAN import KernelGAN, Learner
 from datasets.KernelGAN_data_generator import DataGenerator
-from utils.universal_util import read_yaml, pickle_load, calculate_PSNR
+from utils.universal_util import read_yaml, pickle_load, calculate_PSNR, normalization, nearest_itpl, overlap, \
+    draw_text_on_image
 
 
 def train(opt):
@@ -34,6 +36,7 @@ def main():
     if not os.path.exists(opt['output_dir_path']):
         os.mkdir(opt['output_dir_path'])
     if opt['preload_data'] is None:
+        print(f'load test data from {opt["input_image_root"]}')
         for file_name in os.listdir(opt['input_image_root']):
             opt['input_image_path'] = os.path.join(opt['input_image_root'], file_name)
             opt['img_name'] = os.path.splitext(opt['input_image_path'])[0]
@@ -42,15 +45,29 @@ def main():
         try:
             from datasets.hr_lr_kernel_from_BioSR import HrLrKernelFromBioSR
             testset = pickle_load(opt['preload_data']).dataset
+            print(f'load test data from {opt["preload_data"]}')
             for i in range(len(testset)):
                 opt['input_image_path'] = testset[i]['name'] + '.png'
                 opt['img_name'] = testset[i]['name']
                 opt['input_image'] = torch.permute(testset[i]['lr'], (1, 2, 0)).contiguous().cpu().numpy()
-                pred_kernel = train(opt)
-                del opt['input_image']
+                pred_kernel = torch.from_numpy(train(opt))
+                result = normalization(testset[i]['lr']).squeeze(0)
+                show_size = (testset[i]['lr'].shape[-2] // 4, testset[i]['lr'].shape[-1] // 4)
+                gt_kernel = testset[i]['kernel']
                 kernel_psnr = calculate_PSNR(pred_kernel, testset[i]['kernel'], max_val='auto')
-                print(kernel_psnr)
                 kernel_psnrs.append(kernel_psnr)
+                pred_kernel = nearest_itpl(pred_kernel, show_size)
+                gt_kernel = nearest_itpl(gt_kernel, show_size)
+                result = overlap(normalization(gt_kernel), result, (0, 0))
+                result = overlap(normalization(pred_kernel), result, (gt_kernel.shape[-2], 0))
+                result = transforms.ToPILImage()((result * 65535).to(torch.int32))
+                font_size = max(testset[i]['lr'].shape[-2] // 25, 16)
+                draw_text_on_image(result, f'PSNR {kernel_psnr:5.2f}',
+                                   (0, testset[i]['lr'].shape[-2] - 2 * font_size), font_size, 65535)
+                draw_text_on_image(result, testset[i]['name'],
+                                   (0, testset[i]['lr'].shape[-2] - font_size), font_size, 65535)
+                result.save(os.path.join(opt['output_dir_path'], testset[i]['name'] + '.png'))
+                print(f'kernel psnr={kernel_psnr}\n')
             print(f'avg psnr: kernel={np.mean(kernel_psnrs):5.2f}')
         except KeyboardInterrupt:
             print(f'avg psnr: kernel={np.mean(kernel_psnrs):5.2f}')

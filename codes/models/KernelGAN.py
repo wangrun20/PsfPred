@@ -127,7 +127,7 @@ class KernelGAN(object):
         save_final_kernel(no_shift_kernel, self.opt)
         print('KernelGAN estimation complete!')
         run_zssr(final_kernel, self.opt)
-        print('FINISHED RUN (see --%s-- folder)\n' % self.opt['output_dir_path'] + '*' * 60 + '\n\n')
+        print('FINISHED RUN (see --%s-- folder)\n' % self.opt['output_dir_path'] + '*' * 60)
         return no_shift_kernel, final_kernel
 
 

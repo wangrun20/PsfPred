@@ -23,8 +23,10 @@ def test(opt):
     # set up data loader
     if opt['testing']['preload_data'] is not None:
         test_loader = pickle_load(opt['testing']['preload_data'])
+        print(f'load test data from {opt["testing"]["preload_data"]}')
     else:
         test_loader = get_dataloader(opt['test_data'])
+        print('generate test data on the fly')
 
     # set up model
     model = get_model(opt['model'])

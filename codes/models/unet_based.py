@@ -26,7 +26,7 @@ class UNetBased_Model(BaseModel):
                 if self.loss_function is not None else None
             if self.norm_k:
                 self.pred_kernel = torch.clamp(self.pred_kernel, min=0., max=1.)
-                self.pred_kernel /= torch.sum(self.pred_kernel)
+                self.pred_kernel /= torch.sum(self.pred_kernel, dim=(-2, -1), keepdim=True)
         self.network.train()
 
     def optimize_parameters(self):

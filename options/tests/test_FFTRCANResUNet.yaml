@@ -1,7 +1,7 @@
 testing:
   is_save: False # TODO: may be updated
-  save_dir: './results/FFTRCANResUNet-1118-x264' # TODO: may be updated
-  preload_data: './data/test_loaders/test_loader-15pz.pth' # TODO: may be updated
+  save_dir: './results/FFTRCANResUNet-1118' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-r25-15pz.pth' # TODO: may be updated
 
 model:
   name: 'UNetBased'
@@ -34,7 +34,7 @@ test_data:
   name: 'HrLrKernelFromBioSR'
   is_train: False
   gpu_id: ~
-  repeat: 25
+  repeat: ~
   img_filter:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]

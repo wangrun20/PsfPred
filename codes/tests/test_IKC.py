@@ -26,8 +26,10 @@ def test(opt):
     # set up data loader
     if opt['testing']['preload_data'] is not None:
         test_loader = pickle_load(opt['testing']['preload_data'])
+        print(f'load test data from {opt["testing"]["preload_data"]}')
     else:
         test_loader = get_dataloader(opt['test_data'])
+        print('generate test data on the fly')
 
     # set up model
     F_model = get_model(opt['F_model'])
@@ -77,7 +79,8 @@ def test(opt):
                     result = overlap(normalization(gt_kernel), result, (0, 0))
                     result = overlap(normalization(pred_kernel), result, (gt_kernel.shape[-2], 0))
                 if show_kernel_code_psnr:
-                    kernel_code_psnr = calculate_PSNR(kernel_code_of_sr, gt_kernel_code, max_val='auto')
+                    offset = min(torch.min(kernel_code_of_sr).item(), torch.min(gt_kernel_code).item())
+                    kernel_code_psnr = calculate_PSNR(kernel_code_of_sr - offset, gt_kernel_code - offset, max_val='auto')
                     kernel_code_psnrs.append(kernel_code_psnr)
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(F_model.hr.shape[-2] // 25, 16)

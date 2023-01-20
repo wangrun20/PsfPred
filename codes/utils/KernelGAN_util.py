@@ -219,11 +219,11 @@ def kernel_shift(kernel, sf):
 
 def save_final_kernel(k_2, opt):
     """saves the final kernel and the analytic kernel to the results folder"""
-    sio.savemat(os.path.join(opt['output_dir_path'], '%s_kernel_x2.mat' % os.path.basename(opt['img_name'])), {'Kernel': k_2})
-    k = torch.from_numpy(k_2)
-    k = (k - torch.min(k)) / (torch.max(k) - torch.min(k))
-    k = torchvision.transforms.ToPILImage()(k)
-    k.save(os.path.join(opt['output_dir_path'], '%s_kernel_x2.png' % os.path.basename(opt['img_name'])))
+    sio.savemat(os.path.join(opt['output_dir_path'], '%s_kernel.mat' % os.path.basename(opt['img_name'])), {'Kernel': k_2})
+    # k = torch.from_numpy(k_2)
+    # k = (k - torch.min(k)) / (torch.max(k) - torch.min(k))
+    # k = torchvision.transforms.ToPILImage()(k)
+    # k.save(os.path.join(opt['output_dir_path'], '%s_kernel.png' % os.path.basename(opt['img_name'])))
     if opt['X4']:
         k_4 = analytic_kernel(k_2)
         sio.savemat(os.path.join(opt['output_dir_path'], '%s_kernel_x4.mat' % opt['img_name']), {'Kernel': k_4})

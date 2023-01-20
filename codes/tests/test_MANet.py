@@ -41,10 +41,10 @@ def test(opt):
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(model.lr.shape[-2] // 25, 16)
                 draw_text_on_image(result, f'Kernel PSNR {kernel_psnr:5.2f}',
+                                   (0, model.lr.shape[-2] - 3 * font_size), font_size, 65535)
+                draw_text_on_image(result, f'PSNR {torch.min(heat_map).item():5.2f}~{torch.max(heat_map).item():5.2f}',
                                    (0, model.lr.shape[-2] - 2 * font_size), font_size, 65535)
                 draw_text_on_image(result, data['name'][0], (0, model.lr.shape[-2] - font_size), font_size, 65535)
-                draw_text_on_image(result, f'PSNR {torch.min(heat_map).item():5.2f}~{torch.max(heat_map).item():5.2f}',
-                                   (model.lr.shape[-1], 0), font_size, 65535)
                 result.save(os.path.join(save_dir, data['name'][0] + '.png'))
                 pbar.update(1)
 

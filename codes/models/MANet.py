@@ -19,8 +19,10 @@ class MANet_Model(BaseModel):
         self.network.eval()
         with torch.no_grad():
             self.pred_kernel = self.network(self.lr)
-            self.loss = self.loss_function(self.pred_kernel, self.gt_kernel.unsqueeze(1)) \
-                if self.loss_function is not None else None
+            # times 1e4 since kernel pixel values are very small
+            self.loss = self.loss_function(self.pred_kernel * 1e4,
+                                           self.gt_kernel.unsqueeze(1).expand(-1, self.pred_kernel.shape[1], -1,
+                                                                              -1) * 1e4) if self.loss_function is not None else None
         self.network.train()
 
     def optimize_parameters(self):
@@ -28,7 +30,10 @@ class MANet_Model(BaseModel):
         if self.opt['optimizer']['name'] in ('Adam', 'SGD'):
             self.optimizer.zero_grad()
             self.pred_kernel = self.network(self.lr)
-            self.loss = self.loss_function(self.pred_kernel, self.gt_kernel.unsqueeze(1))
+            # times 1e4 since kernel pixel values are very small
+            self.loss = self.loss_function(self.pred_kernel * 1e4,
+                                           self.gt_kernel.unsqueeze(1).expand(-1, self.pred_kernel.shape[1], -1,
+                                                                              -1) * 1e4)
             self.loss.backward()
             self.optimizer.step()
         else:

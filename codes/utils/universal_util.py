@@ -259,7 +259,7 @@ def concat(tensors, row, col):
 
 
 def main():
-    opt = read_yaml('../../options/train_FFTRCANResUNet.yaml')
+    opt = read_yaml('../../options/trains/train_FFTRCANResUNet.yaml')
     print(opt)
     pass
 

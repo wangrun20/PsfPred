@@ -1,18 +1,18 @@
 project_name: 'FFTRCANResUNet'
-experiment_name: 'FFTRCANResUNet-0119' # TODO: may be updated
+experiment_name: 'FFTRCANResUNet-0120' # TODO: may be updated
 
 training:
   max_epochs: 10000
-  validation_freq: 2000 # TODO: may be updated
+  validation_freq: 1000 # TODO: may be updated
   checkpoint_freq: 4000 # TODO: may be updated
-  wandb_id: '9ubbbtiu' # TODO: may be updated
+  wandb_id: '3e4t6dw3' # TODO: may be updated
 
 model:
   name: 'UNetBased'
   gpu: True
   is_data_parallel: False
-  norm_lr: True # TODO: may be updated
-  norm_k: True # TODO: may be updated
+  norm_lr: False # TODO: may be updated
+  norm_k: False # TODO: may be updated
   network:
     name: 'FFTRCANResUNet'
     in_channels: 1
@@ -43,7 +43,7 @@ train_data:
   name: 'HrLrKernelFromBioSR'
   is_train: True
   gpu_id: ~
-  repeat: 64  # ~ for no repeat
+  repeat: ~  # ~ for no repeat
   img_filter:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]

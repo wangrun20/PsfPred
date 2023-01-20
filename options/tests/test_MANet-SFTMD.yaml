@@ -1,0 +1,96 @@
+testing:
+  is_save: False # TODO: may be updated
+  show_kernel_code_psnr: True
+  save_dir: './results/MANet-SFTMD-0120-pca65' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-r25-15pz.pth' # TODO: may be updated
+
+M_Model:
+  name: 'MANet'
+  gpu: True
+  is_data_parallel: False
+  network:
+    name: 'MANet_s1'
+    in_nc: 1
+    scale: 1
+    kernel_size: 33
+    manet_nf: 128
+    manet_nb: 1
+    split: 2
+    init: ~
+  optimizer:
+    name: ~
+  scheduler:
+    name: ~
+  loss_function:
+    name: ~
+  checkpoint:
+    network: './experiments/MANet-0119/108000_network.pth' # TODO: may be updated
+    training_state: ~
+
+F_Model:
+  name: 'F_Model'
+  gpu: True
+  is_data_parallel: False
+  pca_mean: './data/pca_matrices/pca_mean.pth'
+  pca_matrix: './data/pca_matrices/pca_matrix65.pth'
+  network:
+    name: 'SFTMD'
+    in_nc: 1
+    out_nc: 1
+    nf: 64
+    nb: 16
+    scale: 1
+    input_para: 65
+    min: 0.0
+    max: 1.0
+    init: ~
+  optimizer:
+    name: ~
+  scheduler:
+    name: ~
+  loss_function:
+    name: ~
+  checkpoint:
+    network: './experiments/SFTMD-0117-pca65/127000_network.pth' # TODO: may be updated
+    training_state: ~
+
+test_data:
+  name: 'HrLrKernelFromBioSR'
+  is_train: False
+  gpu_id: ~
+  repeat: ~
+  img_filter:
+    img_root: '../BioDataset/Mixed'
+    structure_selected: [1, 2, 3, 4]
+    included_idx: [1, 10]
+  hr_cropping:
+    mode: 'random'  # ~ for no aug # TODO: may be updated
+    center_pos: [-1, -1]
+    scanning_shape: [-1, -1]
+    hr_size: [512, 512] # TODO: may be updated
+  img_signal: [1000]
+  psf_settings:
+      kernel_size: 33
+      NA: 1.35
+      Lambda: 0.525
+      RefractiveIndex: 1.33
+      SigmaX: 2.0
+      SigmaY: 2.0
+      Pixelsize: 0.0313
+      nMed: 1.33
+      phaseZ:
+          idx_start: 4
+          num_idx: 15
+          mode: 'gaussian'
+          std: 0.125
+          bound: 1.0
+  sup_phaseZ: 'all'  # all | [begin, end]
+  padding:
+      mode: 'circular'  # constant | reflect | replicate | circular
+      value: -1  # for constant mode
+  loader_settings:
+    batch_size: 1
+    shuffle: False
+    num_workers: 0
+    pin_memory: False
+    drop_last: False

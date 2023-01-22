@@ -1,8 +1,8 @@
 testing:
-  is_save: False # TODO: may be updated
+  is_save: True # TODO: may be updated
   show_kernel_code_psnr: True
-  save_dir: './results/UNetBased-SFTMD-0120-pca65' # TODO: may be updated
-  preload_data: './data/test_loaders/test_loader-r25-15pz.pth' # TODO: may be updated
+  save_dir: './results/UNetBased-SFTMD-Ukernel-0122-pca65' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-15pz.pth' # TODO: may be updated
 
 U_Model:
   name: 'UNetBased'
@@ -55,7 +55,7 @@ F_Model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/SFTMD-0117-pca65/127000_network.pth' # TODO: may be updated
+    network: './experiments/SFTMD-0122-pca65-Ukernel/20000_network.pth' # TODO: may be updated
     training_state: ~
 
 test_data:

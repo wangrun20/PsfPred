@@ -1,10 +1,11 @@
 testing:
   is_save: False # TODO: may be updated
+  save_kernel: True # TODO: may be updated
   correct_step: 7
   show_kernel: True
   show_kernel_code_psnr: True
   save_dir: './results/IKC-0119-pca65' # TODO: may be updated
-  preload_data: './data/test_loaders/test_loader-r25-15pz.pth' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-15pz.pth' # TODO: may be updated
 
 F_model:
   name: 'F_Model'
@@ -86,10 +87,10 @@ test_data:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]
     included_idx: [1, 10]
-  hr_cropping:
+  hr_crop:
     mode: 'random'  # ~ for no aug # TODO: may be updated
     center_pos: [-1, -1]
-    scanning_shape: [-1, -1]
+    scan_shape: [-1, -1]
     hr_size: [512, 512] # TODO: may be updated
   img_signal: [1000]
   psf_settings:

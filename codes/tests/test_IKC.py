@@ -4,6 +4,7 @@ import torch
 from torchvision import transforms
 import numpy as np
 from tqdm import tqdm
+from scipy.io import savemat
 
 from models import get_model
 from datasets import get_dataloader
@@ -14,6 +15,7 @@ from utils.universal_util import read_yaml, calculate_PSNR, normalization, PCA_D
 def test(opt):
     # pass parameter
     is_save = opt['testing']['is_save']
+    save_kernel = opt['testing']['save_kernel']
     correct_step = opt['testing']['correct_step']
     show_kernel = opt['testing']['show_kernel']
     show_kernel_code_psnr = opt['testing']['show_kernel_code_psnr']
@@ -38,6 +40,7 @@ def test(opt):
     sr_psnrs = []
     kernel_psnrs = []
     kernel_code_psnrs = []
+    mat_data = {'IKC_pred_kernels': [], 'names': []}
     pca_decoder = PCA_Decoder(weight=F_model.pca_encoder.weight, mean=F_model.pca_encoder.mean)
 
     # start testing
@@ -62,6 +65,9 @@ def test(opt):
                         kernel_code_of_sr = C_model.pred_kernel_code.detach().cpu()
                     else:
                         kernel_code_of_sr = kernel_code_of_sr.to(F_model.device)
+                if save_kernel:
+                    mat_data['IKC_pred_kernels'].append(pca_decoder(kernel_code_of_sr).squeeze(0).detach().cpu().numpy())
+                    mat_data['names'].append(data['name'][0])
                 sr_psnr = calculate_PSNR(F_model.hr, F_model.sr, max_val=1.0)
                 sr_psnrs.append(sr_psnr)
 
@@ -95,6 +101,8 @@ def test(opt):
                 if is_save:
                     result.save(os.path.join(save_dir, data['name'][0] + '.png'))
                 pbar.update(1)
+    if save_kernel:
+        savemat(os.path.join(save_dir, 'pred_kernels.mat'), mat_data)
     print(f'avg psnr: sr={np.mean(sr_psnrs):5.2f}, kernel={np.mean(kernel_psnrs):5.2f}, code={np.mean(kernel_code_psnrs):5.2f}')
 
 

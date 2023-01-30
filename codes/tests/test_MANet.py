@@ -4,6 +4,7 @@ import torch
 from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
+from scipy.io import savemat
 
 from models import get_model
 from datasets import get_dataloader
@@ -14,6 +15,7 @@ from utils.universal_util import read_yaml, calculate_PSNR, normalization, neare
 def test(opt):
     # pass parameter
     is_save = opt['testing']['is_save']
+    save_kernel = opt['testing']['save_kernel']
     save_dir = opt['testing']['save_dir']
 
     # mkdir
@@ -30,6 +32,7 @@ def test(opt):
 
     # set up model
     model = get_model(opt['model'])
+    mat_data = {'MANet_pred_kernels': [], 'names': []}
     kernel_psnrs = []
 
     # start testing
@@ -38,6 +41,9 @@ def test(opt):
             for data in test_loader:
                 model.feed_data(data)
                 model.test()
+                if save_kernel:
+                    mat_data['MANet_pred_kernels'].append(torch.mean(model.pred_kernel, dim=1).squeeze(0).detach().cpu().numpy())
+                    mat_data['names'].append(data['name'][0])
                 heat_map = model.psnr_heat_map().unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
                 result = torch.cat([normalization(model.lr), normalization(heat_map)], dim=-1).squeeze(0).squeeze(0)
                 show_size = (model.lr.shape[-2] // 4, model.lr.shape[-1] // 4)
@@ -59,6 +65,8 @@ def test(opt):
                 if is_save:
                     result.save(os.path.join(save_dir, data['name'][0] + '.png'))
                 pbar.update(1)
+    if save_kernel:
+        savemat(os.path.join(save_dir, 'pred_kernels.mat'), mat_data)
     print(f'avg psnr: kernel={np.mean(kernel_psnrs):5.2f}')
 
 

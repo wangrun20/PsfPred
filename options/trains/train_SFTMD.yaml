@@ -49,10 +49,10 @@ train_data:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]
     included_idx: [11, 100]
-  hr_cropping:
+  hr_crop:
     mode: 'random' # TODO: may be updated
     center_pos: [-1, -1]
-    scanning_shape: [-1, -1]
+    scan_shape: [-1, -1]
     hr_size: [128, 128] # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
@@ -90,10 +90,10 @@ test_data:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]
     included_idx: [1, 10]
-  hr_cropping:
+  hr_crop:
     mode: 'random' # TODO: may be updated
     center_pos: [-1, -1]
-    scanning_shape: [-1, -1]
+    scan_shape: [-1, -1]
     hr_size: [128, 128] # TODO: may be updated
   img_signal: [1000]
   psf_settings:

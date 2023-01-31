@@ -5,13 +5,13 @@ import numpy as np
 from tqdm import tqdm
 from models import get_model
 from datasets import get_dataloader
-from utils.universal_util import read_yaml, save_yaml
+from utils.universal_util import read_yaml, save_yaml, calculate_PSNR, PCA_Decoder
 
 
 def train(opt):
     # pass parameter
     project_name = opt['project_name']
-    experiment_path = os.path.join('../../experiments', opt['experiment_name'])
+    experiment_path = os.path.join('./experiments', opt['experiment_name'])
     max_epochs = opt['training']['max_epochs']
     validation_freq = opt['training']['validation_freq']
     checkpoint_freq = opt['training']['checkpoint_freq']
@@ -85,6 +85,9 @@ def train(opt):
                     va_P_loss = []
                     va_F_loss = []
                     va_C_loss = []
+                    va_sr_psnr = []
+                    va_kernel_psnr = []
+                    pca_decoder = PCA_Decoder(weight=F_model.pca_encoder.weight, mean=F_model.pca_encoder.mean)
                     for data in test_loader:
                         P_model.feed_data(data)
                         P_model.test()
@@ -104,9 +107,14 @@ def train(opt):
                             kernel_code_of_sr = C_model.pred_kernel_code.detach().cpu()
                         va_F_loss.append(F_model.loss.item())
                         va_C_loss.append(C_model.loss.item())
+                        va_sr_psnr.append(calculate_PSNR(F_model.hr.detach(), F_model.sr.detach(), max_val=1.0))
+                        va_kernel_psnr.append(calculate_PSNR(pca_decoder(kernel_code_of_sr.to(F_model.device)),
+                                                             data['kernel'].to(F_model.device), max_val='auto'))
                     wandb.log({'va_P_loss': np.mean(va_P_loss),
                                'va_F_loss': np.mean(va_F_loss),
                                'va_C_loss': np.mean(va_C_loss),
+                               'va_sr_psnr': np.mean(va_sr_psnr),
+                               'va_kernel_psnr': np.mean(va_kernel_psnr),
                                'step': step,
                                'epoch': epoch})
 

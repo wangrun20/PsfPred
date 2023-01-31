@@ -5,6 +5,7 @@ import functools
 from networks.IKC import SFTMD, Predictor, Corrector
 from networks.MANet import MANet_s1
 from networks.unet_based import FFTRCANResUNet
+from networks.unet_sr import UNetSR2
 
 
 def init_weights(net, init_conv_linear_type='orthogonal', gain=0.2, init_bn_type='uniform'):
@@ -69,6 +70,8 @@ def get_network(opt):
         network = MANet_s1(opt)
     elif opt['name'] == 'FFTRCANResUNet':
         network = FFTRCANResUNet(opt)
+    elif opt['name'] == 'UNetSR2':
+        network = UNetSR2(opt)
     else:
         raise NotImplementedError
     if opt['init'] is not None:

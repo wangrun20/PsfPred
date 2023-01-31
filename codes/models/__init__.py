@@ -1,6 +1,7 @@
 from models.IKC import F_Model, P_Model, C_Model
 from models.MANet import MANet_Model
 from models.unet_based import UNetBased_Model
+from models.unet_sr import UNetSR_Model
 
 
 def get_model(opt):
@@ -16,5 +17,7 @@ def get_model(opt):
         return MANet_Model(opt)
     elif opt['name'] == 'UNetBased':
         return UNetBased_Model(opt)
+    elif opt['name'] == 'UNetSR':
+        return UNetSR_Model(opt)
     else:
         raise NotImplementedError

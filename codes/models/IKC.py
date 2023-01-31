@@ -71,7 +71,8 @@ class P_Model(BaseModel):
         if self.opt['optimizer']['name'] in ('Adam', 'SGD'):
             self.optimizer.zero_grad()
             self.pred_kernel_code = self.network(self.lr)
-            self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code)
+            # times 1e1 since kernel_code elements are very small
+            self.loss = self.loss_function(self.gt_kernel_code * 1e1, self.pred_kernel_code * 1e1)
             self.loss.backward()
             self.optimizer.step()
         else:
@@ -95,7 +96,9 @@ class C_Model(BaseModel):
         self.network.eval()
         with torch.no_grad():
             self.pred_kernel_code = self.network(self.sr, self.kernel_code_of_sr)
-            self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code) if self.loss_function is not None else None
+            # times 1e1 since kernel_code elements are very small
+            self.loss = self.loss_function(self.gt_kernel_code * 1e1, self.pred_kernel_code * 1e1) \
+                if self.loss_function is not None else None
         self.network.train()
 
     def optimize_parameters(self):
@@ -103,7 +106,8 @@ class C_Model(BaseModel):
         if self.opt['optimizer']['name'] in ('Adam', 'SGD'):
             self.optimizer.zero_grad()
             self.pred_kernel_code = self.network(self.sr, self.kernel_code_of_sr)
-            self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code)
+            # times 1e1 since kernel_code elements are very small
+            self.loss = self.loss_function(self.gt_kernel_code * 1e1, self.pred_kernel_code * 1e1)
             self.loss.backward()
             self.optimizer.step()
         else:

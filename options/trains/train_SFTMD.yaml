@@ -1,25 +1,25 @@
 project_name: 'SFTMD'
-experiment_name: 'SFTMD-0117-pca65' # TODO: may be updated
+experiment_name: 'SFTMD-0130-pca65' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 1000 # TODO: may be updated
-  wandb_id: 'ijudidoo' # TODO: may be updated
+  wandb_id: 'e8ikjdu6' # TODO: may be updated
 
 model:
   name: 'F_Model'
   gpu: True
-  is_data_parallel: True
-  pca_mean: './pca_mean.pth'
-  pca_matrix: './pca_matrix65.pth'
+  is_data_parallel: False
+  pca_mean: './data/pca_matrices/pca_mean.pth'
+  pca_matrix: './data/pca_matrices/pca_matrix65.pth'
   network:
     name: 'SFTMD'
     in_nc: 1
     out_nc: 1
     nf: 64
     nb: 16
-    scale: 1
+    scale: 2
     input_para: 65
     min: 0.0
     max: 1.0
@@ -44,7 +44,7 @@ train_data:
   name: 'HrLrKernelFromBioSR'
   is_train: True
   gpu_id: ~
-  repeat: 64  # ~ for no repeat
+  repeat: ~  # ~ for no repeat
   img_filter:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]
@@ -54,6 +54,7 @@ train_data:
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
     hr_size: [128, 128] # TODO: may be updated
+  scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
       kernel_size: 33
@@ -95,6 +96,7 @@ test_data:
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
     hr_size: [128, 128] # TODO: may be updated
+  scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
       kernel_size: 33

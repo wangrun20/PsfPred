@@ -41,7 +41,9 @@ class MANet_Model(BaseModel):
 
     def psnr_heat_map(self, is_norm=False):
         gt_kernel = self.gt_kernel.squeeze(0)
-        pred_kernel = self.pred_kernel.squeeze(0).view(self.lr.shape[-2:] + self.pred_kernel.shape[-2:])
+        pred_kernel = self.pred_kernel.squeeze(0).view((self.lr.shape[-2] * self.network.scale,
+                                                        self.lr.shape[-1] * self.network.scale)
+                                                       + self.pred_kernel.shape[-2:])
         # gt_kernel: (h, w)
         # pred_kernel: (H, W, h, w)
         if is_norm:

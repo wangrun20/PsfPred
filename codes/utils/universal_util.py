@@ -89,6 +89,8 @@ def calculate_PSNR(img1, img2, border=0, max_val=None):
                                      f'but got {img1.shape} and {img2.shape}'
     if max_val == 'auto':
         max_val = max(torch.max(img1).item(), torch.max(img2).item())
+    elif max_val is None:
+        raise ValueError('unspecified max_val')
     H, W = img1.shape[-2:]
     img1 = img1[..., border:H - border, border:W - border].type(torch.float32)
     img2 = img2[..., border:H - border, border:W - border].type(torch.float32)

@@ -72,7 +72,8 @@ def test(opt):
                 sr_psnrs.append(sr_psnr)
 
                 # LR->SR->HR
-                result = torch.cat([normalization(F_model.lr), normalization(F_model.sr),
+                result = torch.cat([normalization(nearest_itpl(F_model.lr, F_model.hr.shape[-2:])),
+                                    normalization(F_model.sr),
                                     normalization(F_model.hr)], dim=-1).squeeze(0).squeeze(0)
                 if show_kernel:
                     show_size = (F_model.hr.shape[-2] // 4, F_model.hr.shape[-1] // 4)

@@ -9,7 +9,7 @@ class CosineAnnealingLR_Restart(_LRScheduler):
         self.restarts = opt['restarts'] if opt['restarts'] else [0]
         self.weights = opt['weights'] if opt['weights'] else [1]
         self.eta_min = opt['eta_min']
-        self.last_epoch = opt['last_epoch'] if 'last_epoch' in opt.keys() else -1
+        self.last_epoch = -1
         self.T_max = self.T_period[0]  # current T period
         self.last_restart = 0
         assert len(self.restarts) == len(self.weights), 'restarts and their weights do not match.'
@@ -36,8 +36,7 @@ def main():
     scheduler = CosineAnnealingLR_Restart(optimizer, opt={'T_period': [12500, 12500, 12500, 12500],
                                                           'restarts': [12500, 25000, 37500],
                                                           'weights': [1, 1, 1],
-                                                          'eta_min': 1e-7,
-                                                          'last_epoch': -1})
+                                                          'eta_min': 1e-7})
     print(scheduler)
 
 

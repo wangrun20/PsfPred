@@ -3,10 +3,11 @@ import os
 import wandb
 from tqdm import tqdm
 import numpy as np
+import torch
 
 from models import get_model
 from datasets import get_dataloader
-from utils.universal_util import read_yaml, save_yaml
+from utils.universal_util import read_yaml, save_yaml, calculate_PSNR
 
 
 def train(opt):
@@ -65,11 +66,15 @@ def train(opt):
                 # validate
                 if step == 1 or step % validation_freq == 0:
                     va_loss = []
+                    va_psnr = []
                     for data in test_loader:
                         model.feed_data(data)
                         model.test()
                         va_loss.append(model.loss.item())
-                    wandb.log({"va_loss": np.mean(va_loss),
+                        va_psnr.append((calculate_PSNR(model.gt_kernel, torch.mean(model.pred_kernel.detach(), dim=1),
+                                                       max_val='auto')))
+                    wandb.log({'va_loss': np.mean(va_loss),
+                               'va_psnr': np.mean(va_psnr),
                                'step': step,
                                'epoch': epoch})
 

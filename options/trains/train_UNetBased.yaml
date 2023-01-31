@@ -5,7 +5,7 @@ training:
   max_epochs: 10000
   validation_freq: 1000 # TODO: may be updated
   checkpoint_freq: 4000 # TODO: may be updated
-  wandb_id: '3er54ygw' # TODO: may be updated
+  wandb_id: 'dju76ht3' # TODO: may be updated
 
 model:
   name: 'UNetBased'

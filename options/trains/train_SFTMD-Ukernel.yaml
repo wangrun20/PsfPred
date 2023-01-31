@@ -10,7 +10,7 @@ training:
 F_Model:
   name: 'F_Model'
   gpu: True
-  is_data_parallel: True
+  is_data_parallel: False
   pca_mean: './data/pca_matrices/pca_mean.pth'
   pca_matrix: './data/pca_matrices/pca_matrix65.pth'
   network:
@@ -43,7 +43,7 @@ F_Model:
 U_Model:
   name: 'UNetBased'
   gpu: True
-  is_data_parallel: True
+  is_data_parallel: False
   norm_lr: True # TODO: may be updated
   norm_k: True # TODO: may be updated
   network:
@@ -81,6 +81,7 @@ train_data:
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
     hr_size: [264, 264] # TODO: may be updated
+  scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
       kernel_size: 33
@@ -122,6 +123,7 @@ test_data:
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
     hr_size: [264, 264] # TODO: may be updated
+  scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
       kernel_size: 33

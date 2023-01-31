@@ -39,20 +39,15 @@ class BaseModel(object):
             self.load_network(load_path=opt['checkpoint']['network'])
         self.network = self.network.to(self.device)
 
+        if opt['checkpoint'] is not None and opt['checkpoint']['training_state'] is not None:
+            opt['optimizer']['lr'] = self.restore_lr(opt['checkpoint']['training_state'])
         self.optimizer = get_optimizer(filter(lambda p: p.requires_grad, self.network.parameters()), opt['optimizer'])
-
+        self.scheduler = get_scheduler(self.optimizer, opt['scheduler'])
         if opt['checkpoint'] is not None and opt['checkpoint']['training_state'] is not None:
             self.restored_epoch, self.restored_step = self.restore_epoch_step(opt['checkpoint']['training_state'])
-            opt['scheduler']['last_epoch'] = self.restored_step - 1
+            self.load_training_state(load_path=opt['checkpoint']['training_state'])
         else:
             self.restored_epoch, self.restored_step = None, None
-            opt['scheduler']['last_epoch'] = -1
-        self.scheduler = get_scheduler(self.optimizer, opt['scheduler'])
-
-        if opt['checkpoint'] is not None and opt['checkpoint']['training_state'] is not None:
-            self.load_training_state(load_path=opt['checkpoint']['training_state'])
-
-        self.set_learning_rate(opt['optimizer']['lr'] if opt['optimizer']['name'] is not None else 2e-4)
 
         self.loss_function = get_loss_function(opt['loss_function'])
 
@@ -92,15 +87,18 @@ class BaseModel(object):
         elif self.opt['scheduler']['name'] == 'CosineAnnealingLR_Restart':
             self.scheduler.step()
         elif self.opt['scheduler']['name'] == 'ReduceLROnPlateau':
-            if self.accum_loss is None:
-                self.accum_loss = []
-            elif step % self.opt['scheduler']['step_interval'] == 0:
-                metric = sum(self.accum_loss) / len(self.accum_loss)
-                self.scheduler.step(metrics=metric)
-                print(f'ReduceLROnPlateau step with metric = {metric}')
-                self.accum_loss = []
+            if step is None:
+                self.scheduler.step(metrics=float('inf'))
             else:
-                self.accum_loss.append(self.loss.item())
+                if self.accum_loss is None:
+                    self.accum_loss = []
+                elif step % self.opt['scheduler']['step_interval'] == 0:
+                    metric = sum(self.accum_loss) / len(self.accum_loss)
+                    self.scheduler.step(metrics=metric)
+                    print(f'ReduceLROnPlateau step with metric = {metric}')
+                    self.accum_loss = []
+                else:
+                    self.accum_loss.append(self.loss.item())
         else:
             raise NotImplementedError
 
@@ -139,11 +137,14 @@ class BaseModel(object):
         print(f'restore network from {load_path}')
 
     def save_training_state(self, save_path, epoch, step):
-        state = {'epoch': epoch, 'step': step,
+        state = {'epoch': epoch, 'step': step, 'lr': self.get_current_learning_rate(),
                  'optimizer': self.optimizer.state_dict() if self.optimizer is not None else None,
                  'scheduler': self.scheduler.state_dict() if self.scheduler is not None else None}
         torch.save(state, save_path)
         print(f'save training state to {save_path}')
+
+    def restore_lr(self, load_path):
+        return torch.load(load_path)['lr']
 
     def restore_epoch_step(self, load_path):
         state = torch.load(load_path)

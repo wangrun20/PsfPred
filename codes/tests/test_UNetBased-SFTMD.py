@@ -59,7 +59,8 @@ def test(opt):
                 sr_psnr = calculate_PSNR(F_model.hr, F_model.sr, max_val=1.0)
                 sr_psnrs.append(sr_psnr)
                 # LR->SR->HR
-                result = torch.cat([normalization(F_model.lr), normalization(F_model.sr),
+                result = torch.cat([normalization(nearest_itpl(F_model.lr, F_model.sr.shape[-2:])),
+                                    normalization(F_model.sr),
                                     normalization(F_model.hr)], dim=-1).squeeze(0).squeeze(0)
                 show_size = (F_model.hr.shape[-2] // 4, F_model.hr.shape[-1] // 4)
                 pred_kernel = nearest_itpl(pred_kernel, show_size)
@@ -70,9 +71,9 @@ def test(opt):
                 font_size = max(F_model.hr.shape[-2] // 25, 16)
                 if show_kernel_code_psnr:
                     draw_text_on_image(result, f'Kernel PSNR {kernel_psnr:5.2f}',
-                                       (0, F_model.lr.shape[-2] - 2 * font_size), font_size, 65535)
+                                       (0, F_model.hr.shape[-2] - 2 * font_size), font_size, 65535)
                     draw_text_on_image(result, f'Code PSNR {kernel_code_psnr:5.2f}',
-                                       (0, F_model.lr.shape[-2] - font_size), font_size, 65535)
+                                       (0, F_model.hr.shape[-2] - font_size), font_size, 65535)
                 draw_text_on_image(result, f'PSNR {sr_psnr:5.2f}', (result.width // 3, 0), font_size, 65535)
                 draw_text_on_image(result, data['name'][0], (result.width // 3 * 2, 0), font_size, 65535)
                 if is_save:

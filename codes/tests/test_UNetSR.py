@@ -46,7 +46,7 @@ def test(opt):
                                     normalization(model.hr)], dim=-1).squeeze(0).squeeze(0)
                 if show_kernel:
                     show_size = (model.hr.shape[-2] // 4, model.hr.shape[-1] // 4)
-                    kernel = nearest_itpl(model.kernel.squeeze(0), show_size)
+                    kernel = nearest_itpl(data['kernel'].squeeze(0), show_size)
                     result = overlap(normalization(kernel), result, (0, 0))
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(model.hr.shape[-2] // 25, 16)

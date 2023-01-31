@@ -1,8 +1,8 @@
 testing:
-  is_save: True # TODO: may be updated
+  is_save: False # TODO: may be updated
   show_kernel_code_psnr: True
-  save_dir: './results/UNetBased-SFTMD-Ukernel-0122-pca65' # TODO: may be updated
-  preload_data: './data/test_loaders/test_loader-15pz.pth' # TODO: may be updated
+  save_dir: './results/UNetBased-SFTMD-0130-pca65' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-1000item.pth' # TODO: may be updated
 
 U_Model:
   name: 'UNetBased'
@@ -18,7 +18,7 @@ U_Model:
     num_rcab: 4
     reduction: 16
     num_down_up: 5
-    num_pixel_stack_layer: 3
+    num_pixel_stack_layer: 2
     out_channels: 1
     init: ~
   optimizer:
@@ -28,7 +28,7 @@ U_Model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/FFTRCANResUNet-1118/145000_network.pth' # TODO: may be updated
+    network: './experiments/FFTRCANResUNet-0130/116000_network.pth' # TODO: may be updated
     training_state: ~
 
 F_Model:
@@ -43,7 +43,7 @@ F_Model:
     out_nc: 1
     nf: 64
     nb: 16
-    scale: 1
+    scale: 2
     input_para: 65
     min: 0.0
     max: 1.0
@@ -55,7 +55,7 @@ F_Model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/SFTMD-0122-pca65-Ukernel/20000_network.pth' # TODO: may be updated
+    network: './experiments/SFTMD-0130-pca65/54000_network.pth' # TODO: may be updated
     training_state: ~
 
 test_data:
@@ -72,6 +72,7 @@ test_data:
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
     hr_size: [512, 512] # TODO: may be updated
+  scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
       kernel_size: 33

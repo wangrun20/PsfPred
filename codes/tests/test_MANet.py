@@ -45,8 +45,10 @@ def test(opt):
                     mat_data['MANet_pred_kernels'].append(torch.mean(model.pred_kernel, dim=1).squeeze(0).detach().cpu().numpy())
                     mat_data['names'].append(data['name'][0])
                 heat_map = model.psnr_heat_map().unsqueeze(0).unsqueeze(0)  # (1, 1, H, W)
-                result = torch.cat([normalization(model.lr), normalization(heat_map)], dim=-1).squeeze(0).squeeze(0)
-                show_size = (model.lr.shape[-2] // 4, model.lr.shape[-1] // 4)
+                result = torch.cat([normalization(nearest_itpl(model.lr, heat_map.shape[-2:])),
+                                    normalization(heat_map),
+                                    normalization(data['hr']).to(model.device)], dim=-1).squeeze(0).squeeze(0)
+                show_size = (heat_map.shape[-2] // 4, heat_map.shape[-1] // 4)
                 pred_kernel = torch.mean(model.pred_kernel, dim=1).squeeze(0)
                 gt_kernel = model.gt_kernel.squeeze(0)
                 kernel_psnr = calculate_PSNR(pred_kernel, gt_kernel, max_val='auto')
@@ -56,12 +58,12 @@ def test(opt):
                 result = overlap(normalization(gt_kernel), result, (0, 0))
                 result = overlap(normalization(pred_kernel), result, (gt_kernel.shape[-2], 0))
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
-                font_size = max(model.lr.shape[-2] // 25, 16)
+                font_size = max(heat_map.shape[-2] // 25, 16)
                 draw_text_on_image(result, f'Kernel PSNR {kernel_psnr:5.2f}',
-                                   (0, model.lr.shape[-2] - 3 * font_size), font_size, 65535)
+                                   (0, heat_map.shape[-2] - 3 * font_size), font_size, 65535)
                 draw_text_on_image(result, f'PSNR {torch.min(heat_map).item():5.2f}~{torch.max(heat_map).item():5.2f}',
-                                   (0, model.lr.shape[-2] - 2 * font_size), font_size, 65535)
-                draw_text_on_image(result, data['name'][0], (0, model.lr.shape[-2] - font_size), font_size, 65535)
+                                   (0, heat_map.shape[-2] - 2 * font_size), font_size, 65535)
+                draw_text_on_image(result, data['name'][0], (0, heat_map.shape[-2] - font_size), font_size, 65535)
                 if is_save:
                     result.save(os.path.join(save_dir, data['name'][0] + '.png'))
                 pbar.update(1)

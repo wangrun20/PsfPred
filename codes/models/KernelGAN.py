@@ -1,7 +1,8 @@
 import torch
 import torch.nn.functional as F
-from utils.KernelGAN_util import save_final_kernel, run_zssr, post_process_k
+import numpy as np
 
+from utils.KernelGAN_util import save_final_kernel, run_zssr, post_process_k
 from loss_functions.KernelGAN_loss import GANLoss, SparsityLoss, BoundariesLoss, CentralizedLoss, SumOfWeightsLoss, \
     DownScaleLoss
 from networks import init_weights
@@ -124,11 +125,19 @@ class KernelGAN(object):
     def finish(self):
         no_shift_kernel, final_kernel = post_process_k(self.curr_k, n=self.opt['n_filtering'])
         # save_final_kernel(final_kernel, self.opt)
-        save_final_kernel(no_shift_kernel, self.opt)
+        # save_final_kernel(no_shift_kernel, self.opt)
+        diff = (final_kernel.shape[0] - no_shift_kernel.shape[0],
+                final_kernel.shape[1] - no_shift_kernel.shape[1])
+        bound = (diff[0] // 2, final_kernel.shape[0] - (diff[0] - (diff[0] // 2)),
+                 diff[1] // 2, final_kernel.shape[1] - (diff[1] - (diff[1] // 2)))
+        final_correct_kernel = final_kernel[bound[0]:bound[1], bound[2]:bound[3]]
+        final_correct_kernel = np.clip(final_correct_kernel, 0.0, 1.0)
+        final_correct_kernel /= np.sum(final_correct_kernel)
+        assert final_correct_kernel.shape == no_shift_kernel.shape
         print('KernelGAN estimation complete!')
         run_zssr(final_kernel, self.opt)
         print('FINISHED RUN (see --%s-- folder)\n' % self.opt['output_dir_path'] + '*' * 60)
-        return no_shift_kernel, final_kernel
+        return final_correct_kernel
 
 
 class Learner(object):

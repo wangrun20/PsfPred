@@ -14,26 +14,30 @@ from utils.universal_util import read_yaml, calculate_PSNR, normalization, neare
 
 def test(opt):
     # pass parameter
-    is_save = opt['testing']['is_save']
-    save_kernel = opt['testing']['save_kernel']
+    preload_data = opt['testing']['preload_data']
+    save_img = opt['testing']['save_img']
+    save_mat = opt['testing']['save_mat']
     save_dir = opt['testing']['save_dir']
 
     # mkdir
-    if is_save and not os.path.exists(save_dir):
+    if (save_img or save_mat) and not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
     # set up data loader
-    if opt['testing']['preload_data'] is not None:
-        test_loader = pickle_load(opt['testing']['preload_data'])
-        print(f'load test data from {opt["testing"]["preload_data"]}')
+    if preload_data is not None:
+        test_loader = pickle_load(preload_data)
+        print(f'load test data from {preload_data}')
     else:
         test_loader = get_dataloader(opt['test_data'])
         print('generate test data on the fly')
 
     # set up model
     model = get_model(opt['model'])
-    mat_data = {'UNetBased_pred_kernels': [], 'names': []}
+
+    # set up recorder
+    pred_kernels = []
     kernel_psnrs = []
+    names = []
 
     # start testing
     with tqdm(desc=f'testing', total=len(test_loader.dataset), unit='img') as pbar:
@@ -41,29 +45,32 @@ def test(opt):
             for data in test_loader:
                 model.feed_data(data)
                 model.test()
-                if save_kernel:
-                    mat_data['UNetBased_pred_kernels'].append(model.pred_kernel.squeeze(0).squeeze(0).detach().cpu().numpy())
-                    mat_data['names'].append(data['name'][0])
-                result = normalization(model.lr).squeeze(0).squeeze(0)
-                show_size = (model.lr.shape[-2] // 4, model.lr.shape[-1] // 4)
-                pred_kernel = model.pred_kernel.squeeze(0).squeeze(0)
+
                 gt_kernel = model.gt_kernel.squeeze(0)
+                pred_kernel = model.pred_kernel.squeeze(0).squeeze(0)
+                pred_kernels.append(pred_kernel.detach().cpu().numpy())
                 kernel_psnr = calculate_PSNR(pred_kernel, gt_kernel, max_val='auto')
                 kernel_psnrs.append(kernel_psnr)
-                pred_kernel = nearest_itpl(pred_kernel, show_size)
-                gt_kernel = nearest_itpl(gt_kernel, show_size)
-                result = overlap(normalization(gt_kernel), result, (0, 0))
-                result = overlap(normalization(pred_kernel), result, (gt_kernel.shape[-2], 0))
+                names.append(data['name'][0])
+
+                # img marked
+                result = normalization(model.lr).squeeze(0).squeeze(0)
+                show_size = (model.lr.shape[-2] // 4, model.lr.shape[-1] // 4)
+                result = overlap(nearest_itpl(gt_kernel, show_size, norm=True), result, (0, 0))
+                result = overlap(nearest_itpl(pred_kernel, show_size, norm=True), result, (show_size[-2], 0))
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(model.lr.shape[-2] // 25, 16)
                 draw_text_on_image(result, f'PSNR {kernel_psnr:5.2f}',
                                    (0, model.lr.shape[-2] - 2 * font_size), font_size, 65535)
                 draw_text_on_image(result, data['name'][0], (0, model.lr.shape[-2] - font_size), font_size, 65535)
-                if is_save:
+
+                if save_img:
                     result.save(os.path.join(save_dir, data['name'][0] + '.png'))
                 pbar.update(1)
-    if save_kernel:
-        savemat(os.path.join(save_dir, 'pred_kernels.mat'), mat_data)
+    if save_mat:
+        savemat(os.path.join(save_dir, 'results.mat'), {'UNetBased_pred_kernels': pred_kernels,
+                                                        'UNetBased_kernel_psnrs': kernel_psnrs,
+                                                        'names': names})
     print(f'avg psnr: kernel={np.mean(kernel_psnrs):5.2f}')
 
 

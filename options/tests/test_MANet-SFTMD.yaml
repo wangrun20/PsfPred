@@ -1,8 +1,8 @@
 testing:
-  is_save: False # TODO: may be updated
-  show_kernel_code_psnr: True
-  save_dir: './results/MANet-SFTMD-0130-pca65' # TODO: may be updated
-  preload_data: './data/test_loaders/test_loader-1000item.pth' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-40item.pth' # TODO: may be updated
+  save_img: True # TODO: may be updated
+  save_mat: True # TODO: may be updated
+  save_dir: './results/?' # TODO: may be updated
 
 M_Model:
   name: 'MANet'

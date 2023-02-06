@@ -218,15 +218,20 @@ class PCA_Decoder(object):
             (B, self.l, self.l))
 
 
-def nearest_itpl(x, size):
+def nearest_itpl(x, size, norm=False):
     """nearest interpolation"""
     assert len(size) == 2
     if len(x.shape) == 4:
-        return F.interpolate(x, size, mode='nearest')
-    if len(x.shape) == 3:
-        return F.interpolate(x.unsqueeze(0), size, mode='nearest').squeeze(0)
-    if len(x.shape) == 2:
-        return F.interpolate(x.unsqueeze(0).unsqueeze(0), size, mode='nearest').squeeze(0).squeeze(0)
+        y = F.interpolate(x, size, mode='nearest')
+    elif len(x.shape) == 3:
+        y = F.interpolate(x.unsqueeze(0), size, mode='nearest').squeeze(0)
+    elif len(x.shape) == 2:
+        y = F.interpolate(x.unsqueeze(0).unsqueeze(0), size, mode='nearest').squeeze(0).squeeze(0)
+    else:
+        raise ValueError
+    if norm:
+        y = normalization(y)
+    return y
 
 
 def overlap(x, y, pos):

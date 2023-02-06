@@ -35,12 +35,13 @@ def main():
 
     # start train
     opt = read_yaml(args.opt)
+    pred_kernels = []
     kernel_psnrs = []
     sr_psnrs = []
-    mat_data = {'KernelGAN_pred_kernels': [], 'names': []}
+    names = []
     if not os.path.exists(opt['output_dir_path']):
         os.mkdir(opt['output_dir_path'])
-        
+
     if opt['preload_data'] is None:
         print(f'load test data from {opt["input_image_root"]}')
         for file_name in os.listdir(opt['input_image_root']):
@@ -48,7 +49,7 @@ def main():
             opt['img_name'] = os.path.splitext(opt['input_image_path'])[0]
             pred_kernel = train(opt)
             savemat(os.path.join(opt['output_dir_path'], '%s_kernel.mat' % os.path.basename(opt['img_name'])),
-                    {'kernel': pred_kernel})        
+                    {'kernel': pred_kernel})
     else:
         testset = pickle_load(opt['preload_data']).dataset
         print(f'load test data from {opt["preload_data"]}')
@@ -60,26 +61,30 @@ def main():
                 opt['img_name'] = data['name']
                 opt['input_image'] = torch.permute(data['lr'], (1, 2, 0)).contiguous().cpu().clone().numpy()
                 pred_kernel = train(opt)
-                mat_data['KernelGAN_pred_kernels'].append(pred_kernel)
-                mat_data['names'].append(data['name'][0])
+                pred_kernels.append(pred_kernel)
+                names.append(data['name'][0])
                 pred_kernel = torch.from_numpy(pred_kernel)
+                gt_kernel = data['kernel']
+                kernel_psnr = calculate_PSNR(pred_kernel, data['kernel'], max_val='auto')
+                kernel_psnrs.append(kernel_psnr)
                 if opt['do_SFTMD']:
                     F_model.feed_data({'hr': data['hr'].unsqueeze(0), 'lr': data['lr'].unsqueeze(0),
                                        'kernel': pred_kernel.unsqueeze(0)})
                     F_model.test()
-                gt_kernel = data['kernel']
-                kernel_psnr = calculate_PSNR(pred_kernel, data['kernel'], max_val='auto')
-                kernel_psnrs.append(kernel_psnr)
-                sr = F_model.sr.squeeze(0).cpu() if opt['do_SFTMD'] else torch.rand(data['hr'].shape)
-                sr_psnr = calculate_PSNR(data['hr'], F_model.sr.squeeze(0).cpu(), max_val=1.0) if opt['do_SFTMD'] else float('nan')
+                    sr = F_model.sr.squeeze(0).cpu()
+                    sr_psnr = calculate_PSNR(data['hr'], F_model.sr.squeeze(0).cpu(), max_val=1.0)
+                else:
+                    sr = torch.rand(data['hr'].shape)
+                    sr_psnr = float('nan')
                 sr_psnrs.append(sr_psnr)
-                result = torch.cat([normalization(nearest_itpl(data['lr'], data['hr'].shape[-2:])),
+
+                # img marked
+                result = torch.cat([nearest_itpl(data['lr'], data['hr'].shape[-2:], norm=True),
                                     normalization(sr), normalization(data['hr'])], dim=-1)
                 show_size = (data['hr'].shape[-2] // 4, data['hr'].shape[-1] // 4)
-                pred_kernel = nearest_itpl(pred_kernel, show_size)
-                gt_kernel = nearest_itpl(gt_kernel, show_size)
-                result = overlap(normalization(gt_kernel), result, (0, 0))
-                result = overlap(normalization(pred_kernel), result, (gt_kernel.shape[-2], 0))
+                result = overlap(nearest_itpl(gt_kernel, show_size, norm=True), result, (0, 0))
+                result = overlap(normalization(nearest_itpl(pred_kernel, show_size, norm=True)), result,
+                                 (show_size[-2], 0))
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(data['hr'].shape[-2] // 25, 16)
                 draw_text_on_image(result, f'PSNR {sr_psnr:5.2f}',
@@ -89,13 +94,29 @@ def main():
                 draw_text_on_image(result, data['name'],
                                    (0, data['hr'].shape[-2] - font_size), font_size, 65535)
                 result.save(os.path.join(opt['output_dir_path'], data['name'] + '.png'))
+
+                # img unmarked
+                pure = torch.cat([torch.cat([nearest_itpl(data['lr'], sr.shape[-2:]),
+                                             sr, data['hr']], dim=-1),
+                                  torch.cat([nearest_itpl(data['lr'], sr.shape[-2:], norm=True),
+                                             normalization(sr), normalization(data['hr'])], dim=-1)],
+                                 dim=-2).squeeze(0).squeeze(0)
+                pure = transforms.ToPILImage()((pure * 65535).to(torch.int32))
+                pure.save(os.path.join(opt['output_dir_path'], data['name'] + '_pure.png'))
+
                 print(f'psnr: kernel={kernel_psnr:5.2f}, sr={sr_psnr:5.2f}')
                 print(f'current avg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}\n')
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
-            savemat(os.path.join(opt['output_dir_path'], 'pred_kernels.mat'), mat_data)
+            savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
+                                                                          'KernelGAN_kernel_psnrs': kernel_psnrs,
+                                                                          'KernelGAN_sr_psnrs': sr_psnrs,
+                                                                          'names': names})
         except:
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
-            savemat(os.path.join(opt['output_dir_path'], 'pred_kernels.mat'), mat_data)
+            savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
+                                                                          'KernelGAN_kernel_psnrs': kernel_psnrs,
+                                                                          'KernelGAN_sr_psnrs': sr_psnrs,
+                                                                          'names': names})
 
 
 if __name__ == '__main__':

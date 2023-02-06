@@ -4,6 +4,7 @@ import torch
 from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
+from scipy.io import savemat
 
 from models import get_model
 from datasets import get_dataloader
@@ -13,25 +14,29 @@ from utils.universal_util import read_yaml, calculate_PSNR, normalization, neare
 
 def test(opt):
     # pass parameter
-    is_save = opt['testing']['is_save']
-    show_kernel = opt['testing']['show_kernel']
+    preload_data = opt['testing']['preload_data']
+    save_img = opt['testing']['save_img']
+    save_mat = opt['testing']['save_mat']
     save_dir = opt['testing']['save_dir']
 
     # mkdir
-    if is_save and not os.path.exists(save_dir):
+    if (save_img or save_mat) and not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
     # set up data loader
-    if opt['testing']['preload_data'] is not None:
-        test_loader = pickle_load(opt['testing']['preload_data'])
-        print(f'load test data from {opt["testing"]["preload_data"]}')
+    if preload_data is not None:
+        test_loader = pickle_load(preload_data)
+        print(f'load test data from {preload_data}')
     else:
         test_loader = get_dataloader(opt['test_data'])
         print('generate test data on the fly')
 
     # set up model
     model = get_model(opt['model'])
+
+    # set up recorder
     sr_psnrs = []
+    names = []
 
     # start testing
     with tqdm(desc=f'testing', total=len(test_loader.dataset), unit='img') as pbar:
@@ -39,22 +44,36 @@ def test(opt):
             for data in test_loader:
                 model.feed_data(data)
                 model.test()
+
                 sr_psnr = calculate_PSNR(model.hr, model.sr, max_val=1.0)
                 sr_psnrs.append(sr_psnr)
-                # LR->SR->HR
-                result = torch.cat([normalization(nearest_itpl(model.lr, model.sr.shape[-2:])), normalization(model.sr),
+                names.append(data['name'][0])
+
+                # img marked
+                result = torch.cat([nearest_itpl(model.lr, model.sr.shape[-2:], norm=True), normalization(model.sr),
                                     normalization(model.hr)], dim=-1).squeeze(0).squeeze(0)
-                if show_kernel:
-                    show_size = (model.hr.shape[-2] // 4, model.hr.shape[-1] // 4)
-                    kernel = nearest_itpl(data['kernel'].squeeze(0), show_size)
-                    result = overlap(normalization(kernel), result, (0, 0))
+                show_size = (model.hr.shape[-2] // 4, model.hr.shape[-1] // 4)
+                result = overlap(nearest_itpl(data['kernel'].squeeze(0), show_size, norm=True), result, (0, 0))
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(model.hr.shape[-2] // 25, 16)
                 draw_text_on_image(result, f'PSNR {sr_psnr:5.2f}', (result.width // 3, 0), font_size, 65535)
                 draw_text_on_image(result, data['name'][0], (result.width // 3 * 2, 0), font_size, 65535)
-                if is_save:
+
+                # img unmarked
+                pure = torch.cat([torch.cat([nearest_itpl(model.lr, model.sr.shape[-2:]),
+                                             model.sr, model.hr], dim=-1),
+                                  torch.cat([nearest_itpl(model.lr, model.sr.shape[-2:], norm=True),
+                                             normalization(model.sr), normalization(model.hr)], dim=-1)],
+                                 dim=-2).squeeze(0).squeeze(0)
+                pure = transforms.ToPILImage()((pure * 65535).to(torch.int32))
+
+                if save_img:
                     result.save(os.path.join(save_dir, data['name'][0] + '.png'))
+                    pure.save(os.path.join(save_dir, data['name'][0] + '_pure.png'))
                 pbar.update(1)
+    if save_mat:
+        savemat(os.path.join(save_dir, 'results.mat'), {'UNetSR_sr_psnrs': sr_psnrs,
+                                                        'names': names})
     print(f'avg psnr: sr={np.mean(sr_psnrs):5.2f}')
 
 

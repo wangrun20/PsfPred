@@ -94,9 +94,9 @@ class HrLrKernelFromBioSR(Dataset):
             phaseZ = get_phaseZ(self.phaseZ_settings, batch_size=1, device=self.device)
             kernel = self.psf_gen.generate_PSF(phaseZ=phaseZ)
         else:
-            hr = self.hrs[idx:idx + 1, :, :]
-            phaseZ = self.test_phaseZs[idx:idx + 1, :]
-            kernel = self.test_kernels[idx:idx + 1, :, :]
+            hr = self.hrs[index:index + 1, :, :]
+            phaseZ = self.test_phaseZs[index:index + 1, :]
+            kernel = self.test_kernels[index:index + 1, :, :]
         assert kernel.shape[-2] % 2 == 1 and kernel.shape[-1] % 2 == 1, 'kernel shape should be odd'
 
         pad = (kernel.shape[-2] // 2,) * 2 + (kernel.shape[-1] // 2,) * 2

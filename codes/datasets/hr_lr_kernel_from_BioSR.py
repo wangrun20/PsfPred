@@ -87,8 +87,8 @@ class HrLrKernelFromBioSR(Dataset):
             raise NotImplementedError('undefined mode')
         return hr.to(self.device)  # (C, H, W), 0~65535
 
-    def __getitem__(self, idx):
-        idx = idx // self.repeat
+    def __getitem__(self, index):
+        idx = index // self.repeat
         if self.is_train:
             hr = self.get_aug_hr(idx)
             phaseZ = get_phaseZ(self.phaseZ_settings, batch_size=1, device=self.device)
@@ -118,9 +118,10 @@ class HrLrKernelFromBioSR(Dataset):
             kernel = self.psf_gen.generate_PSF(phaseZ=cut_phaseZ)
 
         if self.hr_crop['mode'] == 'scan':
-            name = self.names[idx % len(self.names)] + f' part{idx // len(self.names)}'
+            name = self.names[idx % len(self.names)] + f'_part{idx // len(self.names)}' + \
+                   f'_{(index % (len(self) // self.repeat)) + 1}'
         else:
-            name = self.names[idx]
+            name = self.names[idx] + f'_{(index % (len(self) // self.repeat)) + 1}'
 
         hr = hr / 65535.0
         lr = lr / 65535.0

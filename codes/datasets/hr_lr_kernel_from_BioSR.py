@@ -119,9 +119,9 @@ class HrLrKernelFromBioSR(Dataset):
 
         if self.hr_crop['mode'] == 'scan':
             name = self.names[idx % len(self.names)] + f'_part{idx // len(self.names)}' + \
-                   f'_{(index % (len(self) // self.repeat)) + 1}'
+                   f'_{(index % self.repeat) + 1}'
         else:
-            name = self.names[idx] + f'_{(index % (len(self) // self.repeat)) + 1}'
+            name = self.names[idx] + f'_{(index % self.repeat) + 1}'
 
         hr = hr / 65535.0
         lr = lr / 65535.0

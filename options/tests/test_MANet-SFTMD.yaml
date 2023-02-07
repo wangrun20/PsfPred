@@ -1,5 +1,5 @@
 testing:
-  preload_data: './data/test_loaders/test_loader-40item.pth' # TODO: may be updated
+  preload_data: './data/test_loaders/test_loader-120item.pth' # TODO: may be updated
   save_img: True # TODO: may be updated
   save_mat: True # TODO: may be updated
   save_dir: './results/MANet' # TODO: may be updated

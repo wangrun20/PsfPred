@@ -113,7 +113,7 @@ def main():
 
                 print(f'psnr: kernel={kernel_psnr:5.2f}, sr={sr_psnr:5.2f}')
                 print(f'ssim: kernel={kernel_ssim:5.3f}, sr={sr_ssim:5.3f}')
-                print(f'current avg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}\n')
+                print(f'current avg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
                 print(f'current avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}\n')
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
             print(f'avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}')

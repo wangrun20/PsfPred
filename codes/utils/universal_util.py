@@ -286,7 +286,7 @@ def calculate_SSIM(img1, img2, rescale=False):
         v = max(torch.max(img1).item(), torch.max(img2).item())
         img1, img2 = img1 / v, img2 / v
     ssim_loss = SSIM(window_size=11)
-    return ssim_loss(img1, img2)
+    return ssim_loss(img1, img2).item()
 
 
 def main():

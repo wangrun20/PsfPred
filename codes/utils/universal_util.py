@@ -7,6 +7,8 @@ from torchvision import transforms
 from PIL import ImageFont, ImageDraw
 from ruamel import yaml
 
+from utils.ssim import SSIM
+
 
 def save_yaml(opt, yaml_path):
     f = open(yaml_path, 'w', encoding='utf-8')
@@ -263,6 +265,28 @@ def draw_text_on_image(img, text: str, pos: tuple, font_size: int, color):
 def concat(tensors, row, col):
     assert row * col == len(tensors)
     return torch.cat([torch.cat([tensors[i * col + j] for j in range(col)], dim=-1) for i in range(row)], dim=-2)
+
+
+def calculate_SSIM(img1, img2, rescale=False):
+    """
+    img1, img2: tensor(1, C, H, W)/(C, H, W)/(H, W), [0, 1]
+    rescale: if True, rescale images such that max=1.0
+    """
+    def expand4d(x):
+        if len(x.shape) == 2:
+            return x.unsqueeze(0).unsqueeze(0)
+        elif len(x.shape) == 3:
+            return x.unsqueeze(0)
+        elif len(x.shape) == 4:
+            return x
+        else:
+            raise ValueError
+    img1, img2 = expand4d(img1), expand4d(img2)
+    if rescale:
+        v = max(torch.max(img1).item(), torch.max(img2).item())
+        img1, img2 = img1 / v, img2 / v
+    ssim_loss = SSIM(window_size=11)
+    return ssim_loss(img1, img2)
 
 
 def main():

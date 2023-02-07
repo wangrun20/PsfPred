@@ -9,7 +9,7 @@ from scipy.io import savemat
 from models import get_model
 from datasets import get_dataloader
 from utils.universal_util import read_yaml, calculate_PSNR, normalization, PCA_Decoder, nearest_itpl, overlap, \
-    draw_text_on_image, pickle_load
+    draw_text_on_image, pickle_load, calculate_SSIM
 
 
 def test(opt):
@@ -41,8 +41,10 @@ def test(opt):
     # set up recorder
     pred_kernels = []
     kernel_psnrs = []
+    kernel_ssims = []
     kernel_code_psnrs = []
     sr_psnrs = []
+    sr_ssims = []
     names = []
 
     # start testing
@@ -72,11 +74,15 @@ def test(opt):
                 pred_kernels.append(pred_kernel.detach().cpu().numpy())
                 kernel_psnr = calculate_PSNR(pred_kernel, gt_kernel, max_val='auto')
                 kernel_psnrs.append(kernel_psnr)
+                kernel_ssim = calculate_SSIM(pred_kernel, gt_kernel, rescale=True)
+                kernel_ssims.append(kernel_ssim)
                 offset = min(torch.min(kernel_code_of_sr).item(), torch.min(gt_kernel_code).item())
                 kernel_code_psnr = calculate_PSNR(kernel_code_of_sr - offset, gt_kernel_code - offset, max_val='auto')
                 kernel_code_psnrs.append(kernel_code_psnr)
                 sr_psnr = calculate_PSNR(F_model.hr, F_model.sr, max_val=1.0)
                 sr_psnrs.append(sr_psnr)
+                sr_ssim = calculate_SSIM(F_model.hr, F_model.sr)
+                sr_ssims.append(sr_ssim)
                 names.append(data['name'][0])
 
                 # img marked
@@ -110,8 +116,10 @@ def test(opt):
     if save_mat:
         savemat(os.path.join(save_dir, 'results.mat'), {'IKC_pred_kernels': pred_kernels,
                                                         'IKC_kernel_psnrs': kernel_psnrs,
+                                                        'IKC_kernel_ssims': kernel_ssims,
                                                         'IKC_kernel_code_psnrs': kernel_code_psnrs,
                                                         'IKC_sr_psnrs': sr_psnrs,
+                                                        'IKC_sr_ssims': sr_ssims,
                                                         'names': names})
     print(f'avg psnr: sr={np.mean(sr_psnrs):5.2f}, kernel={np.mean(kernel_psnrs):5.2f}, code={np.mean(kernel_code_psnrs):5.2f}')
 

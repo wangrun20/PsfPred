@@ -9,7 +9,7 @@ from scipy.io import savemat
 from models import get_model
 from datasets import get_dataloader
 from utils.universal_util import read_yaml, calculate_PSNR, normalization, nearest_itpl, overlap, draw_text_on_image, \
-    pickle_load
+    pickle_load, calculate_SSIM
 
 
 def test(opt):
@@ -36,6 +36,7 @@ def test(opt):
 
     # set up recorder
     sr_psnrs = []
+    sr_ssims = []
     names = []
 
     # start testing
@@ -47,6 +48,8 @@ def test(opt):
 
                 sr_psnr = calculate_PSNR(model.hr, model.sr, max_val=1.0)
                 sr_psnrs.append(sr_psnr)
+                sr_ssim = calculate_SSIM(model.hr, model.sr)
+                sr_ssims.append(sr_ssim)
                 names.append(data['name'][0])
 
                 # img marked
@@ -73,6 +76,7 @@ def test(opt):
                 pbar.update(1)
     if save_mat:
         savemat(os.path.join(save_dir, 'results.mat'), {'SFTMD_sr_psnrs': sr_psnrs,
+                                                        'SFTMD_sr_ssims': sr_ssims,
                                                         'names': names})
     print(f'avg psnr: sr={np.mean(sr_psnrs):5.2f}')
 

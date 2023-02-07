@@ -11,7 +11,7 @@ from models.KernelGAN import KernelGAN, Learner
 from datasets.hr_lr_kernel_from_BioSR import HrLrKernelFromBioSR  # do not delete this line
 from datasets.KernelGAN_data_generator import DataGenerator
 from utils.universal_util import read_yaml, pickle_load, calculate_PSNR, normalization, nearest_itpl, overlap, \
-    draw_text_on_image
+    draw_text_on_image, calculate_SSIM
 
 
 def train(opt):
@@ -37,7 +37,9 @@ def main():
     opt = read_yaml(args.opt)
     pred_kernels = []
     kernel_psnrs = []
+    kernel_ssims = []
     sr_psnrs = []
+    sr_ssims = []
     names = []
     if not os.path.exists(opt['output_dir_path']):
         os.mkdir(opt['output_dir_path'])
@@ -67,16 +69,21 @@ def main():
                 gt_kernel = data['kernel']
                 kernel_psnr = calculate_PSNR(pred_kernel, data['kernel'], max_val='auto')
                 kernel_psnrs.append(kernel_psnr)
+                kernel_ssim = calculate_SSIM(pred_kernel, data['kernel'], rescale=True)
+                kernel_ssims.append(kernel_ssim)
                 if opt['do_SFTMD']:
                     F_model.feed_data({'hr': data['hr'].unsqueeze(0), 'lr': data['lr'].unsqueeze(0),
                                        'kernel': pred_kernel.unsqueeze(0)})
                     F_model.test()
                     sr = F_model.sr.squeeze(0).cpu()
                     sr_psnr = calculate_PSNR(data['hr'], F_model.sr.squeeze(0).cpu(), max_val=1.0)
+                    sr_ssim = calculate_SSIM(data['hr'], F_model.sr.squeeze(0).cpu())
                 else:
                     sr = torch.rand(data['hr'].shape)
                     sr_psnr = float('nan')
+                    sr_ssim = float('nan')
                 sr_psnrs.append(sr_psnr)
+                sr_ssims.append(sr_ssim)
 
                 # img marked
                 result = torch.cat([nearest_itpl(data['lr'], data['hr'].shape[-2:], norm=True),
@@ -109,13 +116,17 @@ def main():
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
             savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
                                                                           'KernelGAN_kernel_psnrs': kernel_psnrs,
+                                                                          'KernelGAN_kernel_ssims': kernel_ssims,
                                                                           'KernelGAN_sr_psnrs': sr_psnrs,
+                                                                          'KernelGAN_sr_ssims': sr_ssims,
                                                                           'names': names})
         except:
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
             savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
                                                                           'KernelGAN_kernel_psnrs': kernel_psnrs,
+                                                                          'KernelGAN_kernel_ssims': kernel_ssims,
                                                                           'KernelGAN_sr_psnrs': sr_psnrs,
+                                                                          'KernelGAN_sr_ssims': sr_ssims,
                                                                           'names': names})
 
 

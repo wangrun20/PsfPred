@@ -64,7 +64,7 @@ def main():
                 opt['input_image'] = torch.permute(data['lr'], (1, 2, 0)).contiguous().cpu().clone().numpy()
                 pred_kernel = train(opt)
                 pred_kernels.append(pred_kernel)
-                names.append(data['name'][0])
+                names.append(data['name'])
                 pred_kernel = torch.from_numpy(pred_kernel)
                 gt_kernel = data['kernel']
                 kernel_psnr = calculate_PSNR(pred_kernel, data['kernel'], max_val='auto')

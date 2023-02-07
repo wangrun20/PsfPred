@@ -122,6 +122,7 @@ def test(opt):
                                                         'IKC_sr_ssims': sr_ssims,
                                                         'names': names})
     print(f'avg psnr: sr={np.mean(sr_psnrs):5.2f}, kernel={np.mean(kernel_psnrs):5.2f}, code={np.mean(kernel_code_psnrs):5.2f}')
+    print(f'avg ssim: sr={np.mean(sr_ssims):5.3f}, kernel={np.mean(kernel_ssims):5.3f}')
 
 
 def main():

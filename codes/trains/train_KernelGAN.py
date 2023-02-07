@@ -112,8 +112,11 @@ def main():
                 pure.save(os.path.join(opt['output_dir_path'], data['name'] + '_pure.png'))
 
                 print(f'psnr: kernel={kernel_psnr:5.2f}, sr={sr_psnr:5.2f}')
+                print(f'ssim: kernel={kernel_ssim:5.3f}, sr={sr_ssim:5.3f}')
                 print(f'current avg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}\n')
+                print(f'current avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}\n')
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
+            print(f'avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}')
             savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
                                                                           'KernelGAN_kernel_psnrs': kernel_psnrs,
                                                                           'KernelGAN_kernel_ssims': kernel_ssims,
@@ -122,6 +125,7 @@ def main():
                                                                           'names': names})
         except:
             print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
+            print(f'avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}')
             savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
                                                                           'KernelGAN_kernel_psnrs': kernel_psnrs,
                                                                           'KernelGAN_kernel_ssims': kernel_ssims,

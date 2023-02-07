@@ -79,6 +79,7 @@ def test(opt):
                                                         'UNetSR_sr_ssims': sr_ssims,
                                                         'names': names})
     print(f'avg psnr: sr={np.mean(sr_psnrs):5.2f}')
+    print(f'avg ssim: sr={np.mean(sr_ssims):5.3f}')
 
 
 def main():

@@ -115,16 +115,14 @@ def main():
                 print(f'ssim: kernel={kernel_ssim:5.3f}, sr={sr_ssim:5.3f}')
                 print(f'current avg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
                 print(f'current avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}\n')
-            print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
-            print(f'avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}')
-            savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
-                                                                          'KernelGAN_kernel_psnrs': kernel_psnrs,
-                                                                          'KernelGAN_kernel_ssims': kernel_ssims,
-                                                                          'KernelGAN_sr_psnrs': sr_psnrs,
-                                                                          'KernelGAN_sr_ssims': sr_ssims,
-                                                                          'names': names})
-        except:
-            print(f'\n\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
+        except Exception as e:
+            print(f'{repr(e)}')
+        except KeyboardInterrupt:
+            print('KeyboardInterrupt')
+        else:
+            print('normal exit')
+        finally:
+            print(f'\navg psnr: kernel={np.mean(kernel_psnrs):5.2f}, sr={np.mean(sr_psnrs):5.2f}')
             print(f'avg ssim: kernel={np.mean(kernel_ssims):5.3f}, sr={np.mean(sr_ssims):5.3f}')
             savemat(os.path.join(opt['output_dir_path'], 'results.mat'), {'KernelGAN_pred_kernels': pred_kernels,
                                                                           'KernelGAN_kernel_psnrs': kernel_psnrs,

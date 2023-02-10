@@ -1,12 +1,12 @@
 project_name: 'IKC'
-experiment_name: 'IKC-0130-pca65' # TODO: may be updated
+experiment_name: 'IKC-0210-pca65' # TODO: may be updated
 
 training:
   max_epochs: 10000
   correct_step: 7
   validation_freq: 100 # TODO: may be updated
   checkpoint_freq: 200 # TODO: may be updated
-  wandb_id: '9871ud65' # TODO: may be updated
+  wandb_id: '4rr43145' # TODO: may be updated
 
 F_model:
   name: 'F_Model'
@@ -53,7 +53,11 @@ P_model:
     lr: 1e-4
     weight_decay: 0.0
   scheduler:
-    name: ~
+    name: 'ReduceLROnPlateau'
+    factor: 0.5
+    patience: 2
+    min_lr: 1e-6
+    step_interval: 400
   loss_function:
     name: 'MSE'
   checkpoint:
@@ -76,7 +80,11 @@ C_model:
     lr: 1e-4
     weight_decay: 0.0
   scheduler:
-    name: ~
+    name: 'ReduceLROnPlateau'
+    factor: 0.5
+    patience: 2
+    min_lr: 1e-6
+    step_interval: 400
   loss_function:
     name: 'MSE'
   checkpoint:

@@ -92,13 +92,12 @@ class BaseModel(object):
             else:
                 if self.accum_loss is None:
                     self.accum_loss = []
-                elif step % self.opt['scheduler']['step_interval'] == 0:
+                self.accum_loss.append(self.loss.item())
+                if step % self.opt['scheduler']['step_interval'] == 0:
                     metric = sum(self.accum_loss) / len(self.accum_loss)
                     self.scheduler.step(metrics=metric)
                     print(f'ReduceLROnPlateau step with metric = {metric}')
                     self.accum_loss = []
-                else:
-                    self.accum_loss.append(self.loss.item())
         else:
             raise NotImplementedError
 

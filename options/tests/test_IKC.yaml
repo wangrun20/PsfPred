@@ -52,7 +52,7 @@ P_model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/IKC-0130-pca65/3600_P_network.pth' # TODO: may be updated
+    network: './experiments/IKC-0210-pca65/26400_P_network.pth' # TODO: may be updated
     training_state: ~
 
 C_model:
@@ -73,7 +73,7 @@ C_model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/IKC-0130-pca65/3600_C_network.pth' # TODO: may be updated
+    network: './experiments/IKC-0210-pca65/26400_C_network.pth' # TODO: may be updated
     training_state: ~
 
 test_data:

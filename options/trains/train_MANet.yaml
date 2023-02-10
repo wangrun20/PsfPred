@@ -1,11 +1,11 @@
 project_name: 'MANet'
-experiment_name: 'MANet-0130' # TODO: may be updated
+experiment_name: 'MANet-0210' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 3000 # TODO: may be updated
   checkpoint_freq: 6000 # TODO: may be updated
-  wandb_id: 'd987e1jg' # TODO: may be updated
+  wandb_id: 'nju87ihg' # TODO: may be updated
 
 model:
   name: 'MANet'
@@ -25,10 +25,11 @@ model:
     lr: 2e-4
     weight_decay: 1e-8
   scheduler:
-    name: 'CosineAnnealingWarmRestarts'
-    T_0: 30000
-    T_mult: 1
-    eta_min: 1e-7
+    name: 'ReduceLROnPlateau'
+    factor: 0.5
+    patience: 2
+    min_lr: 1e-6
+    step_interval: 4000
   loss_function:
     name: 'L1'
   checkpoint:

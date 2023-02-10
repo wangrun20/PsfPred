@@ -24,7 +24,7 @@ model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/MANet-0130/48000_network.pth' # TODO: may be updated
+    network: './experiments/MANet-0210/390000_network.pth' # TODO: may be updated
     training_state: ~
 
 test_data:

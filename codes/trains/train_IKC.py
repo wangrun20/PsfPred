@@ -70,8 +70,8 @@ def train(opt):
                                        'kernel_code_of_sr': kernel_code_of_sr,
                                        'gt_kernel_code': gt_kernel_code})
                     C_model.optimize_parameters()
-                    C_model.update_learning_rate(step)
                     kernel_code_of_sr = C_model.pred_kernel_code.detach().cpu()
+                C_model.update_learning_rate(step)
 
                 wandb.log({'tr_P_loss': P_model.loss.item(),
                            'tr_F_loss': F_model.loss.item(),

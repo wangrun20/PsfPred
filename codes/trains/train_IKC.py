@@ -78,7 +78,8 @@ def train(opt):
                            'tr_C_loss': C_model.loss.item(),
                            'step': step,
                            'epoch': epoch,
-                           'learning_rate': P_model.get_current_learning_rate()})
+                           'P_learning_rate': P_model.get_current_learning_rate(),
+                           'C_learning_rate': C_model.get_current_learning_rate()})
 
                 # validate
                 if step == 1 or step % validation_freq == 0:
@@ -130,6 +131,7 @@ def train(opt):
                 step += 1
                 pbar.update(batch['lr'].shape[0])
                 pbar.set_postfix({'P_loss (batch)': f'{P_model.loss.item():5.3f}',
+                                  'C_loss (batch)': f'{C_model.loss.item():5.3f}',
                                   'P_lr': P_model.get_current_learning_rate(),
                                   'C_lr': C_model.get_current_learning_rate()})
 

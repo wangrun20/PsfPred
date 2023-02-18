@@ -89,7 +89,7 @@ test_data:
     mode: 'random'  # ~ for no aug # TODO: may be updated
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
-    hr_size: [512, 512] # TODO: may be updated
+    hr_size: [264, 264] # TODO: may be updated
   scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:

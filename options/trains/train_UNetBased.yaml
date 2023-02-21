@@ -1,11 +1,11 @@
 project_name: 'FFTRCANResUNet'
-experiment_name: 'FFTRCANResUNet-0130' # TODO: may be updated
+experiment_name: 'FFTRCANResUNet-0221-fft2nd' # TODO: may be updated
 
 training:
   max_epochs: 10000
-  validation_freq: 1000 # TODO: may be updated
-  checkpoint_freq: 4000 # TODO: may be updated
-  wandb_id: 'dju76ht3' # TODO: may be updated
+  validation_freq: 2000 # TODO: may be updated
+  checkpoint_freq: 20000 # TODO: may be updated
+  wandb_id: '87ji65tf' # TODO: may be updated
 
 model:
   name: 'UNetBased'
@@ -15,6 +15,7 @@ model:
   norm_k: True # TODO: may be updated
   network:
     name: 'FFTRCANResUNet'
+    fft_forward: False # TODO: may be updated
     in_channels: 1
     encoder_channels: 128
     num_rg: 2

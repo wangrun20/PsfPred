@@ -1,6 +1,8 @@
 import torch
+from tqdm import tqdm
+
 from zernike_psf import ZernikePSFGenerator
-from utils.universal_util import get_phaseZ, read_yaml, pickle_dump, PCA_Encoder, PCA_Decoder, calculate_PSNR
+from utils.universal_util import get_phaseZ, pickle_dump, PCA_Encoder, PCA_Decoder, calculate_PSNR, normalization
 
 
 def PCA(x, h=2):
@@ -30,12 +32,21 @@ def main():
                       'std': 0.125,
                       'bound': 1.0},
            'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu')}
+    norm = True
     psf_gen = ZernikePSFGenerator(opt)
     sample = []
     other = []
-    for _ in range(3000):
-        sample.append(psf_gen.generate_PSF(phaseZ=get_phaseZ(opt['phaseZ'], batch_size=100, device=opt['device'])))
-        other.append(psf_gen.generate_PSF(phaseZ=get_phaseZ(opt['phaseZ'], batch_size=100, device=opt['device'])))
+    total = 300000
+    batch = 1000
+    with tqdm(desc=f'generating...', total=total, unit='psf') as pbar:
+        for _ in range(total // batch):
+            s = psf_gen.generate_PSF(phaseZ=get_phaseZ(opt['phaseZ'], batch_size=batch, device=opt['device']))
+            o = psf_gen.generate_PSF(phaseZ=get_phaseZ(opt['phaseZ'], batch_size=batch, device=opt['device']))
+            if norm:
+                s, o = normalization(s, batch=batch > 1), normalization(o, batch=batch > 1)
+            sample.append(s)
+            other.append(o)
+            pbar.update(batch)
     sample = torch.cat(sample, dim=0)
     other = torch.cat(other, dim=0)
     flat = sample.view(sample.shape[0], -1)

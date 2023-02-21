@@ -1,16 +1,19 @@
 project_name: 'MANet'
-experiment_name: 'MANet-0211-3phz' # TODO: may be updated
+experiment_name: 'MANet-0221-normlrK' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 4000 # TODO: may be updated
   checkpoint_freq: 8000 # TODO: may be updated
-  wandb_id: '3er5bves' # TODO: may be updated
+  wandb_id: '4rt531ws' # TODO: may be updated
 
 model:
   name: 'MANet'
   gpu: True
   is_data_parallel: False
+  times_1e4: False # TODO: may be updated
+  norm_lr: True # TODO: may be updated
+  norm_k: True # TODO: may be updated
   network:
     name: 'MANet_s1'
     in_nc: 1
@@ -19,6 +22,7 @@ model:
     manet_nf: 128
     manet_nb: 1
     split: 2
+    softmax: False # TODO: may be updated
     init: ['xavier_normal', 0.1, 'normal']
   optimizer:
     name: 'Adam'

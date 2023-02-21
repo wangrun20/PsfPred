@@ -1,12 +1,13 @@
 import torch
 
 from models.base_model import BaseModel
-from utils.universal_util import pickle_load, PCA_Encoder
+from utils.universal_util import pickle_load, PCA_Encoder, normalization
 
 
 class F_Model(BaseModel):
     def __init__(self, opt):
         super().__init__(opt)
+        self.norm_k = opt['norm_k']
         self.hr = torch.rand(size=(16, 1, 224, 224))
         self.lr = torch.rand(size=(16, 1, 224, 224))
         self.sr = torch.rand(size=(16, 1, 224, 224))
@@ -20,7 +21,7 @@ class F_Model(BaseModel):
         self.lr = data['lr'].to(self.device)
         if 'kernel' in data.keys() and 'kernel_code' not in data.keys():
             self.kernel = data['kernel'].to(self.device)
-            self.kernel_code = self.pca_encoder(self.kernel)
+            self.kernel_code = self.pca_encoder(normalization(self.kernel, batch=True) if self.norm_k else self.kernel)
         else:
             self.kernel = None
             self.kernel_code = data['kernel_code'].to(self.device)
@@ -47,6 +48,8 @@ class F_Model(BaseModel):
 class P_Model(BaseModel):
     def __init__(self, opt):
         super().__init__(opt)
+        self.norm_lr = opt['norm_lr']
+        self.norm_k = opt['norm_k']
         self.lr = torch.rand(size=(16, 1, 224, 224))
         self.gt_kernel = torch.rand(size=(16, 33, 33))
         self.pca_encoder = PCA_Encoder(weight=pickle_load(opt['pca_matrix']).to(self.device),
@@ -57,12 +60,12 @@ class P_Model(BaseModel):
     def feed_data(self, data):
         self.lr = data['lr'].to(self.device)
         self.gt_kernel = data['kernel'].to(self.device)
-        self.gt_kernel_code = self.pca_encoder(self.gt_kernel)
+        self.gt_kernel_code = self.pca_encoder(normalization(self.gt_kernel, batch=True) if self.norm_k else self.gt_kernel)
 
     def test(self):
         self.network.eval()
         with torch.no_grad():
-            self.pred_kernel_code = self.network(self.lr)
+            self.pred_kernel_code = self.network(normalization(self.lr, batch=True) if self.norm_lr else self.lr)
             self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code) if self.loss_function is not None else None
         self.network.train()
 
@@ -70,9 +73,8 @@ class P_Model(BaseModel):
         self.network.train()
         if self.opt['optimizer']['name'] in ('Adam', 'SGD'):
             self.optimizer.zero_grad()
-            self.pred_kernel_code = self.network(self.lr)
-            # times 1e1 since kernel_code elements are very small
-            self.loss = self.loss_function(self.gt_kernel_code * 1e1, self.pred_kernel_code * 1e1)
+            self.pred_kernel_code = self.network(normalization(self.lr, batch=True) if self.norm_lr else self.lr)
+            self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code)
             self.loss.backward()
             self.optimizer.step()
         else:
@@ -82,6 +84,7 @@ class P_Model(BaseModel):
 class C_Model(BaseModel):
     def __init__(self, opt):
         super().__init__(opt)
+        self.norm_sr = opt['norm_sr']
         self.sr = torch.rand(size=(16, 1, 224, 224))
         self.kernel_code_of_sr = torch.rand(size=(16, 10))
         self.gt_kernel_code = torch.rand(size=(16, 10))
@@ -95,9 +98,8 @@ class C_Model(BaseModel):
     def test(self):
         self.network.eval()
         with torch.no_grad():
-            self.pred_kernel_code = self.network(self.sr, self.kernel_code_of_sr)
-            # times 1e1 since kernel_code elements are very small
-            self.loss = self.loss_function(self.gt_kernel_code * 1e1, self.pred_kernel_code * 1e1) \
+            self.pred_kernel_code = self.network(normalization(self.sr, batch=True) if self.norm_sr else self.sr, self.kernel_code_of_sr)
+            self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code) \
                 if self.loss_function is not None else None
         self.network.train()
 
@@ -105,9 +107,8 @@ class C_Model(BaseModel):
         self.network.train()
         if self.opt['optimizer']['name'] in ('Adam', 'SGD'):
             self.optimizer.zero_grad()
-            self.pred_kernel_code = self.network(self.sr, self.kernel_code_of_sr)
-            # times 1e1 since kernel_code elements are very small
-            self.loss = self.loss_function(self.gt_kernel_code * 1e1, self.pred_kernel_code * 1e1)
+            self.pred_kernel_code = self.network(normalization(self.sr, batch=True) if self.norm_sr else self.sr, self.kernel_code_of_sr)
+            self.loss = self.loss_function(self.gt_kernel_code, self.pred_kernel_code)
             self.loss.backward()
             self.optimizer.step()
         else:

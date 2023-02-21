@@ -8,6 +8,9 @@ model:
   name: 'MANet'
   gpu: True
   is_data_parallel: False
+  times_1e4: False # TODO: may be updated
+  norm_lr: True # TODO: may be updated
+  norm_k: True # TODO: may be updated
   network:
     name: 'MANet_s1'
     in_nc: 1
@@ -16,6 +19,7 @@ model:
     manet_nf: 128
     manet_nb: 1
     split: 2
+    softmax: False # TODO: may be updated
     init: ~
   optimizer:
     name: ~

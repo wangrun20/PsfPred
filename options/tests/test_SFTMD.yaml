@@ -10,6 +10,7 @@ model:
   is_data_parallel: False
   pca_mean: './data/pca_matrices/pca_mean.pth'
   pca_matrix: './data/pca_matrices/pca_matrix65.pth'
+  norm_k: True # TODO: may be updated
   network:
     name: 'SFTMD'
     in_nc: 1

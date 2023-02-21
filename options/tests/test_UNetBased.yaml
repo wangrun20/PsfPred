@@ -12,6 +12,7 @@ model:
   norm_k: True # TODO: may be updated
   network:
     name: 'FFTRCANResUNet'
+    fft_forward: True # TODO: may be updated
     in_channels: 1
     encoder_channels: 128
     num_rg: 2

@@ -346,6 +346,7 @@ class FFTResUNet(nn.Module):
 class FFTRCANResUNet(nn.Module):
     def __init__(self, opt):
         super().__init__()
+        self.fft_forward = opt['fft_forward']
         encoder_channels = opt['encoder_channels']
         _ = opt['in_channels'], opt['out_channels'], opt['num_rg'], opt['num_rcab'], opt['reduction'], \
             opt['num_down_up'], opt['num_pixel_stack_layer']
@@ -363,10 +364,16 @@ class FFTRCANResUNet(nn.Module):
 
     def forward(self, x):
         x1 = self.in_rcan1(x)
-        x2 = self.in_rcan2(x)
-        x2 = torch.fft.fft2(x2)
-        x2 = torch.abs(x2)
-        x2 = torch.log10(1 + x2)
+        if self.fft_forward:
+            x2 = torch.fft.fft2(x)
+            x2 = torch.abs(x2)
+            x2 = torch.log10(1 + x2)
+            x2 = self.in_rcan2(x2)
+        else:
+            x2 = self.in_rcan2(x)
+            x2 = torch.fft.fft2(x2)
+            x2 = torch.abs(x2)
+            x2 = torch.log10(1 + x2)
         ux = torch.cat([x1, x2], dim=-3)
         out = self.res_unet(ux)
         return out

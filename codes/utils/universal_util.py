@@ -102,10 +102,28 @@ def calculate_PSNR(img1, img2, border=0, max_val=None):
     return 20 * math.log10(max_val / math.sqrt(mse))
 
 
-def normalization(tensor, v_min=0.0, v_max=1.0):
-    if torch.max(tensor) - torch.min(tensor) == 0.0:
-        return torch.clamp(tensor, max=v_max, min=v_min)
-    return ((tensor - torch.min(tensor)) / (torch.max(tensor) - torch.min(tensor))) * (v_max - v_min) + v_min
+def normalization(tensor, v_min=0.0, v_max=1.0, batch=False):
+    if not batch:
+        if torch.max(tensor) - torch.min(tensor) == 0.0:
+            return torch.clamp(tensor, max=v_max, min=v_min)
+        return ((tensor - torch.min(tensor)) / (torch.max(tensor) - torch.min(tensor))) * (v_max - v_min) + v_min
+    else:
+        assert len(tensor.shape) >= 2
+        b_max = torch.max(torch.max(tensor, dim=-1, keepdim=True).values, dim=-2, keepdim=True).values
+        b_min = torch.min(torch.min(tensor, dim=-1, keepdim=True).values, dim=-2, keepdim=True).values
+        e = torch.argwhere((b_max - b_min).squeeze(-1).squeeze(-1) == 0.0)
+        if len(e) > 0:
+            t = tensor.clone()
+            p = torch.clamp(tensor[e, ...], max=v_max, min=v_min)
+            t[e, ...] = torch.rand(size=t[0, ...].shape, device=t.device)
+            b_max = torch.max(torch.max(t, dim=-1, keepdim=True).values, dim=-2, keepdim=True).values
+            b_min = torch.min(torch.min(t, dim=-1, keepdim=True).values, dim=-2, keepdim=True).values
+            t = ((t - b_min) / (b_max - b_min)) * (v_max - v_min) + v_min
+            t[e, ...] = p
+        else:
+            t = ((tensor - b_min) / (b_max - b_min)) * (v_max - v_min) + v_min
+        return t
+
 
 
 def get_phaseZ(opt=None, batch_size=1, device=torch.device('cpu')):

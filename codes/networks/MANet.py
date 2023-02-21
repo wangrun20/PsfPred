@@ -108,7 +108,7 @@ class MANet(nn.Module):
     (B, in_nc, H, W) -> (B, kernel_size**2, H, W)
     """
 
-    def __init__(self, in_nc=3, kernel_size=21, nc=(128, 256), nb=1, split=2):
+    def __init__(self, in_nc=3, kernel_size=21, nc=(128, 256), nb=1, split=2, softmax=True):
         super().__init__()
         self.kernel_size = kernel_size
 
@@ -124,7 +124,7 @@ class MANet(nn.Module):
                                 *[MABlock(nc[0], nc[0], bias=True, split=split) for _ in range(nb)])
         self.m_tail = nn.Conv2d(in_channels=nc[0], out_channels=kernel_size ** 2, kernel_size=3, padding=1, bias=True)
 
-        self.softmax = nn.Softmax(1)
+        self.softmax = nn.Softmax(1) if softmax else None
 
     def forward(self, x):
         H, W = x.shape[-2:]
@@ -139,9 +139,8 @@ class MANet(nn.Module):
         x = self.m_tail(x + x1)  # (B, nc[0], H, W) -> (B, kernel_size**2, H, W)
 
         x = x[..., :H, :W]  # remove ReplicationPad part
-        x = self.softmax(x)
 
-        return x
+        return self.softmax(x) if self.softmax is not None else x
 
 
 class MANet_s1(nn.Module):
@@ -158,6 +157,7 @@ class MANet_s1(nn.Module):
         self.manet_nf = opt['manet_nf']
         self.manet_nb = opt['manet_nb']
         self.split = opt['split']
+        self.softmax = opt['softmax']
         self.kernel_estimation = MANet(in_nc=self.in_nc, kernel_size=self.kernel_size,
                                        nc=[self.manet_nf, self.manet_nf * 2], nb=self.manet_nb, split=self.split)
 

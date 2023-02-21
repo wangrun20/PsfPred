@@ -1,19 +1,20 @@
 project_name: 'IKC'
-experiment_name: 'IKC-0213-pca10' # TODO: may be updated
+experiment_name: 'IKC-0221-pca65-normK' # TODO: may be updated
 
 training:
   max_epochs: 10000
   correct_step: 7
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 1000 # TODO: may be updated
-  wandb_id: '398ijr76' # TODO: may be updated
+  wandb_id: '4okki849' # TODO: may be updated
 
 F_model:
   name: 'F_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices/pca_mean.pth'
-  pca_matrix: './data/pca_matrices/pca_matrix10.pth'
+  pca_mean: './data/pca_matrices_normK/pca_mean.pth'
+  pca_matrix: './data/pca_matrices_normK/pca_matrix65.pth'
+  norm_k: True # TODO: may be updated
   network:
     name: 'SFTMD'
     in_nc: 1
@@ -21,7 +22,7 @@ F_model:
     nf: 64
     nb: 16
     scale: 2
-    input_para: 10
+    input_para: 65
     min: 0.0
     max: 1.0
     init: ~
@@ -32,20 +33,22 @@ F_model:
   loss_function:
     name: 'MSE'
   checkpoint:
-    network: './experiments/SFTMD-0212-pca10/50000_network.pth' # TODO: may be updated
+    network: './experiments/SFTMD-0221-pca65-normK/102000_network.pth' # TODO: may be updated
     training_state: ~
 
 P_model:
   name: 'P_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices/pca_mean.pth'
-  pca_matrix: './data/pca_matrices/pca_matrix10.pth'
+  norm_lr: False # TODO: may be updated
+  norm_k: True # TODO: may be updated
+  pca_mean: './data/pca_matrices_normK/pca_mean.pth'
+  pca_matrix: './data/pca_matrices_normK/pca_matrix65.pth'
   network:
     name: 'Predictor'
     in_nc: 1
     nf: 64
-    code_len: 10
+    code_len: 65
     use_bias: True
     init: ['orthogonal', 0.2, 'uniform']
   optimizer:
@@ -68,11 +71,12 @@ C_model:
   name: 'C_Model'
   gpu: True
   is_data_parallel: False
+  norm_sr: False # TODO: may be updated
   network:
     name: 'Corrector'
     in_nc: 1
     nf: 64
-    code_len: 10
+    code_len: 65
     use_bias: True
     init: ['orthogonal', 0.2, 'uniform']
   optimizer:

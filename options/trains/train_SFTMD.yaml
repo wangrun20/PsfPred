@@ -14,7 +14,7 @@ model:
   pca_mean: './data/pca_matrices_gaussian/pca_mean.pth'
   pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth'
   norm_lr: False # TODO: may be updated
-  norm_sr: False # TODO: may be updated
+  norm_hr: False # TODO: may be updated
   network:
     name: 'SFTMD'
     in_nc: 1

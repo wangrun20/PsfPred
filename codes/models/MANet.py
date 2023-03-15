@@ -7,9 +7,7 @@ from utils.universal_util import normalization
 class MANet_Model(BaseModel):
     def __init__(self, opt):
         super().__init__(opt)
-        assert (opt['network']['softmax'] and not opt['norm_k']) or not opt['network']['softmax']
         self.norm_lr = opt['norm_lr']
-        self.norm_k = opt['norm_k']
         self.times_1e4 = opt['times_1e4']
         self.lr = torch.rand(size=(16, 1, 224, 224))
         self.gt_kernel = torch.rand(size=(16, 33, 33))
@@ -17,7 +15,8 @@ class MANet_Model(BaseModel):
 
     def feed_data(self, data):
         self.lr = data['lr'].to(self.device)
-        self.gt_kernel = data['kernel'].to(self.device)
+        if 'kernel' in data.keys():
+            self.gt_kernel = data['kernel'].to(self.device)
 
     def test(self):
         self.network.eval()
@@ -26,12 +25,9 @@ class MANet_Model(BaseModel):
             # times 1e4 since kernel pixel values are very small
             weight = 1e4 if self.times_1e4 else 1.0
             self.loss = self.loss_function(self.pred_kernel * weight,
-                                           (normalization(self.gt_kernel, batch=True) if self.norm_k else self.gt_kernel)
-                                           .unsqueeze(1).expand(-1, self.pred_kernel.shape[1], -1, -1) * weight) \
+                                           self.gt_kernel.unsqueeze(1).expand(-1, self.pred_kernel.shape[1],
+                                                                              -1, -1) * weight) \
                 if self.loss_function is not None else None
-            if self.norm_k:
-                self.pred_kernel = torch.clamp(self.pred_kernel, min=0., max=1.)
-                self.pred_kernel /= torch.sum(self.pred_kernel, dim=(-2, -1), keepdim=True)
         self.network.train()
 
     def optimize_parameters(self):
@@ -42,8 +38,8 @@ class MANet_Model(BaseModel):
             # times 1e4 since kernel pixel values are very small
             weight = 1e4 if self.times_1e4 else 1.0
             self.loss = self.loss_function(self.pred_kernel * weight,
-                                           (normalization(self.gt_kernel, batch=True) if self.norm_k else self.gt_kernel)
-                                           .unsqueeze(1).expand(-1, self.pred_kernel.shape[1], -1, -1) * weight)
+                                           self.gt_kernel.unsqueeze(1).expand(-1, self.pred_kernel.shape[1],
+                                                                              -1, -1) * weight)
             self.loss.backward()
             self.optimizer.step()
         else:

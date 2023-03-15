@@ -103,6 +103,14 @@ def calculate_PSNR(img1, img2, border=0, max_val=None):
 
 
 def normalization(tensor, v_min=0.0, v_max=1.0, batch=False):
+    """
+    :param tensor:
+    :param v_min:
+    :param v_max:
+    :param batch: if False, regard all dims as data needed normalization
+                  if True, regard the 1st dim as batch, the last 2 dims as data needed normalization
+    :return:
+    """
     if not batch:
         if torch.max(tensor) - torch.min(tensor) == 0.0:
             return torch.clamp(tensor, max=v_max, min=v_min)
@@ -123,7 +131,6 @@ def normalization(tensor, v_min=0.0, v_max=1.0, batch=False):
         else:
             t = ((tensor - b_min) / (b_max - b_min)) * (v_max - v_min) + v_min
         return t
-
 
 
 def get_phaseZ(opt=None, batch_size=1, device=torch.device('cpu')):

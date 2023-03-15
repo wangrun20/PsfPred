@@ -11,8 +11,9 @@ class UNetSR_Model(BaseModel):
         self.sr = torch.rand(size=(16, 1, 224, 224))
 
     def feed_data(self, data):
-        self.hr = data['hr'].to(self.device)
         self.lr = data['lr'].to(self.device)
+        if 'hr' in data.keys():
+            self.hr = data['hr'].to(self.device)
 
     def test(self):
         self.network.eval()

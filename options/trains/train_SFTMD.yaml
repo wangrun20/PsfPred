@@ -1,19 +1,20 @@
 project_name: 'SFTMD'
-experiment_name: 'SFTMD-0221-pca65-normK' # TODO: may be updated
+experiment_name: 'SFTMD-0315-Gpca10' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 2000 # TODO: may be updated
-  wandb_id: '563wdcoy' # TODO: may be updated
+  wandb_id: '9862ud83' # TODO: may be updated
 
 model:
   name: 'F_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices_normK/pca_mean.pth'
-  pca_matrix: './data/pca_matrices_normK/pca_matrix65.pth'
-  norm_k: True # TODO: may be updated
+  pca_mean: './data/pca_matrices_gaussian/pca_mean.pth'
+  pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth'
+  norm_lr: False # TODO: may be updated
+  norm_sr: False # TODO: may be updated
   network:
     name: 'SFTMD'
     in_nc: 1
@@ -21,7 +22,7 @@ model:
     nf: 64
     nb: 16
     scale: 2
-    input_para: 65
+    input_para: 10
     min: 0.0
     max: 1.0
     init: ['orthogonal', 0.2, 'uniform'] # ~ for no init
@@ -58,24 +59,32 @@ train_data:
   scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
-      kernel_size: 33
-      NA: 1.35
-      Lambda: 0.525
-      RefractiveIndex: 1.33
-      SigmaX: 2.0
-      SigmaY: 2.0
-      Pixelsize: 0.0313
-      nMed: 1.33
-      phaseZ:
-          idx_start: 4
-          num_idx: 15
-          mode: 'gaussian'
-          std: 0.125
-          bound: 1.0
+    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    kernel_size: 33
+
+    sigma: 2.6
+    sigma_min: 0.2
+    sigma_max: 4.0
+    prob_isotropic: 1.0
+    scale: 2
+
+    NA: 1.35
+    Lambda: 0.525
+    RefractiveIndex: 1.33
+    SigmaX: 2.0
+    SigmaY: 2.0
+    Pixelsize: 0.0313
+    nMed: 1.33
+    phaseZ:
+      idx_start: 4
+      num_idx: 15
+      mode: 'gaussian'
+      std: 0.125
+      bound: 1.0
   sup_phaseZ: 'all'  # all | [begin, end]
   padding:
-      mode: 'circular'  # constant | reflect | replicate | circular
-      value: -1  # for constant mode
+    mode: 'circular'  # constant | reflect | replicate | circular
+    value: -1  # for constant mode
   loader_settings:
     batch_size: 16 # TODO: may be updated
     shuffle: True
@@ -100,24 +109,32 @@ test_data:
   scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
-      kernel_size: 33
-      NA: 1.35
-      Lambda: 0.525
-      RefractiveIndex: 1.33
-      SigmaX: 2.0
-      SigmaY: 2.0
-      Pixelsize: 0.0313
-      nMed: 1.33
-      phaseZ:
-          idx_start: 4
-          num_idx: 15
-          mode: 'gaussian'
-          std: 0.125
-          bound: 1.0
+    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    kernel_size: 33
+
+    sigma: 2.6
+    sigma_min: 0.2
+    sigma_max: 4.0
+    prob_isotropic: 1.0
+    scale: 2
+
+    NA: 1.35
+    Lambda: 0.525
+    RefractiveIndex: 1.33
+    SigmaX: 2.0
+    SigmaY: 2.0
+    Pixelsize: 0.0313
+    nMed: 1.33
+    phaseZ:
+      idx_start: 4
+      num_idx: 15
+      mode: 'gaussian'
+      std: 0.125
+      bound: 1.0
   sup_phaseZ: 'all'  # all | [begin, end]
   padding:
-      mode: 'circular'  # constant | reflect | replicate | circular
-      value: -1  # for constant mode
+    mode: 'circular'  # constant | reflect | replicate | circular
+    value: -1  # for constant mode
   loader_settings:
     batch_size: 1
     shuffle: False

@@ -9,6 +9,7 @@ from torchvision import transforms
 
 from utils.universal_util import random_rotate_crop_flip, add_poisson_gaussian_noise, get_phaseZ
 from utils.zernike_psf import ZernikePSFGenerator
+from utils.gaussian_kernel import GaussianKernelGenerator
 
 
 class HrLrKernelFromBioSR(Dataset):
@@ -18,36 +19,51 @@ class HrLrKernelFromBioSR(Dataset):
         where y is structure type (CCPs | ER | Microtubules | F-actin), x is index
         """
         super().__init__()
+        # general conf
         self.is_train = opt['is_train']
-        self.repeat = opt['repeat'] if opt['repeat'] is not None else 1
         self.device = torch.device('cpu') if opt['gpu_id'] is None else torch.device('cuda', opt['gpu_id'])
+        self.repeat = opt['repeat'] if opt['repeat'] is not None else 1
+        # raw hr filter
         self.img_root = opt['img_filter']['img_root']
         self.structure_selected = tuple(opt['img_filter']['structure_selected'])
         self.included_idx = tuple(range(opt['img_filter']['included_idx'][0], opt['img_filter']['included_idx'][1] + 1))
+        # hr cropping conf
         self.hr_crop = opt['hr_crop']
         self.hr_size = tuple(opt['hr_crop']['hr_size'])
+        # other conf
         self.scale = opt['scale']
         self.img_signal = opt['img_signal']
-        self.phaseZ_settings = opt['psf_settings']['phaseZ']
+        # PSF conf
+        self.psf_type = opt['psf_settings']['type']
+        if self.psf_type == 'Zernike':
+            self.phaseZ_settings = opt['psf_settings']['phaseZ']
+            opt['psf_settings']['device'] = self.device
+            self.psf_gen = ZernikePSFGenerator(opt=opt['psf_settings'])
+        elif self.psf_type == 'Gaussian':
+            self.psf_gen = GaussianKernelGenerator(opt=opt['psf_settings'])
+        else:
+            raise NotImplementedError('undefined PSF type')
+        # supervised phase for Zernike PSF
         self.sup_phaseZ = opt['sup_phaseZ']
-        opt['psf_settings']['device'] = self.device
-        self.psf_gen = ZernikePSFGenerator(opt=opt['psf_settings'])
+        # padding mode for conv
         self.padding = opt['padding']
-
+        # check
         assert self.hr_size[0] % self.scale == 0 and self.hr_size[1] % self.scale == 0
-
+        # collect all raw hr
         all_gt = os.listdir(self.img_root)
         all_gt.sort()
         self.names = [os.path.splitext(file)[0] for file in all_gt
                       if (file.endswith('.png')
                           and (int(file.split('_')[2].replace('.png', '')) in self.structure_selected)
                           and (int(file[4:6]) in self.included_idx))]
-
+        # generate data in advance in testing mode
         if not self.is_train:
-            # hrs are fixed when testing
             self.hrs = torch.cat([self.get_aug_hr(i // self.repeat) for i in range(len(self))], dim=-3)
-            self.test_phaseZs = get_phaseZ(self.phaseZ_settings, batch_size=len(self), device=self.device)
-            self.test_kernels = self.psf_gen.generate_PSF(phaseZ=self.test_phaseZs)
+            if self.psf_type == 'Zernike':
+                self.test_phaseZs = get_phaseZ(self.phaseZ_settings, batch_size=len(self), device=self.device)
+                self.test_kernels = self.psf_gen.generate_PSF(phaseZ=self.test_phaseZs)
+            elif self.psf_type == 'Gaussian':
+                self.test_kernels = self.psf_gen(batch_size=len(self), tensor=True, random=True)
 
     def __len__(self):
         return len(self.names) * self.repeat * (self.hr_crop['scan_shape'][0] * self.hr_crop['scan_shape'][1]
@@ -56,6 +72,7 @@ class HrLrKernelFromBioSR(Dataset):
     def get_aug_hr(self, idx):
         """
         :return: GT image, in shape of self.hr_size, with data augmentation
+                 Tensor (C, H, W), 0~65535
         """
         name = self.names[idx % len(self.names)] if self.hr_crop['mode'] == 'scan' else self.names[idx]
         img = transforms.ToTensor()(Image.open(os.path.join(self.img_root, name + '.png'))).float()
@@ -85,52 +102,75 @@ class HrLrKernelFromBioSR(Dataset):
             hr = img
         else:
             raise NotImplementedError('undefined mode')
-        return hr.to(self.device)  # (C, H, W), 0~65535
+        return hr.to(self.device)
 
     def __getitem__(self, index):
         idx = index // self.repeat
+        # get hr & kernel
         if self.is_train:
             hr = self.get_aug_hr(idx)
-            phaseZ = get_phaseZ(self.phaseZ_settings, batch_size=1, device=self.device)
-            kernel = self.psf_gen.generate_PSF(phaseZ=phaseZ)
+            if self.psf_type == 'Zernike':
+                phaseZ = get_phaseZ(self.phaseZ_settings, batch_size=1, device=self.device)
+                kernel = self.psf_gen.generate_PSF(phaseZ=phaseZ)
+            elif self.psf_type == 'Gaussian':
+                phaseZ = None
+                kernel = self.psf_gen(batch_size=1, tensor=True, random=True)
+            else:
+                raise NotImplementedError('undefined PSF type')
         else:
             hr = self.hrs[index:index + 1, :, :]
-            phaseZ = self.test_phaseZs[index:index + 1, :]
-            kernel = self.test_kernels[index:index + 1, :, :]
+            if self.psf_type == 'Zernike':
+                phaseZ = self.test_phaseZs[index:index + 1, :]
+                kernel = self.test_kernels[index:index + 1, :, :]
+            elif self.psf_type == 'Gaussian':
+                phaseZ = None
+                kernel = self.test_kernels[index:index + 1, :, :]
+            else:
+                raise NotImplementedError('undefined PSF type')
         assert kernel.shape[-2] % 2 == 1 and kernel.shape[-1] % 2 == 1, 'kernel shape should be odd'
-
+        # do conv
         pad = (kernel.shape[-2] // 2,) * 2 + (kernel.shape[-1] // 2,) * 2
         if self.padding['mode'] == "circular":
             lr = F.conv2d(F.pad(hr.unsqueeze(0), pad=pad, mode=self.padding['mode']), kernel.unsqueeze(0)).squeeze(0)
         else:
             lr = F.conv2d(F.pad(hr.unsqueeze(0), pad=pad, mode=self.padding['mode'], value=self.padding['value']),
                           kernel.unsqueeze(0)).squeeze(0)
+        # add noise
         img_signal = 10.0 ** random.uniform(math.log10(self.img_signal[0]), math.log10(self.img_signal[-1]))
         lr = add_poisson_gaussian_noise(lr, level=img_signal)
+        # down sample
         lr = lr[:, ::self.scale, ::self.scale]
-
-        if self.sup_phaseZ == 'all':
+        # do supervised phase
+        if self.sup_phaseZ == 'all' or self.psf_type != 'Zernike':
             pass
         else:
             cut_phaseZ = torch.zeros(size=phaseZ.shape, dtype=phaseZ.dtype, device=phaseZ.device)
             cut_phaseZ[..., self.sup_phaseZ[0]:self.sup_phaseZ[-1] + 1] = \
                 phaseZ[..., self.sup_phaseZ[0]:self.sup_phaseZ[-1] + 1]
             kernel = self.psf_gen.generate_PSF(phaseZ=cut_phaseZ)
-
+        # modify name
         if self.hr_crop['mode'] == 'scan':
             name = self.names[idx % len(self.names)] + f'_part{idx // len(self.names)}' + \
                    f'_{(index % self.repeat) + 1}'
         else:
             name = self.names[idx] + f'_{(index % self.repeat) + 1}'
-
+        # set to [0, 1]
         hr = hr / 65535.0
         lr = lr / 65535.0
-        return {'hr': hr,  # (C, H, W), [0, 1]
-                'lr': lr,  # (C, H, W), [0, 1]
-                'kernel': kernel.squeeze(0),  # (H, W), sum up to 1.0
-                'name': name,  # str, without postfix '.png'
-                'phaseZ': phaseZ,  # (1, 25)
-                'img_signal': img_signal}  # float
+        # return
+        if self.psf_type == 'Zernike':
+            return {'hr': hr,  # (C, H, W), [0, 1]
+                    'lr': lr,  # (C, H, W), [0, 1]
+                    'kernel': kernel.squeeze(0),  # (H, W), sum up to 1.0
+                    'name': name,  # str, without postfix '.png'
+                    'phaseZ': phaseZ,  # (1, 25)
+                    'img_signal': img_signal}  # float
+        elif self.psf_type == 'Gaussian':
+            return {'hr': hr,  # (C, H, W), [0, 1]
+                    'lr': lr,  # (C, H, W), [0, 1]
+                    'kernel': kernel.squeeze(0),  # (H, W), sum up to 1.0
+                    'name': name,  # str, without postfix '.png'
+                    'img_signal': img_signal}  # float
 
 
 def main():

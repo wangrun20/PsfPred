@@ -15,7 +15,8 @@ class UNetBased_Model(BaseModel):
 
     def feed_data(self, data):
         self.lr = data['lr'].to(self.device)
-        self.gt_kernel = data['kernel'].to(self.device)
+        if 'kernel' in data.keys():
+            self.gt_kernel = data['kernel'].to(self.device)
 
     def test(self):
         self.network.eval()
@@ -25,7 +26,7 @@ class UNetBased_Model(BaseModel):
                                            normalization(self.gt_kernel, batch=True) if self.norm_k else self.gt_kernel) \
                 if self.loss_function is not None else None
             if self.norm_k:
-                self.pred_kernel = torch.clamp(self.pred_kernel, min=0., max=1.)
+                self.pred_kernel = normalization(self.pred_kernel, batch=True)
                 self.pred_kernel /= torch.sum(self.pred_kernel, dim=(-2, -1), keepdim=True)
         self.network.train()
 

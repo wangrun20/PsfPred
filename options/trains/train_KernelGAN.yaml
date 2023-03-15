@@ -27,8 +27,8 @@ SFTMD_model:
   name: 'F_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices/pca_mean.pth'
-  pca_matrix: './data/pca_matrices/pca_matrix65.pth'
+  pca_mean: './data/pca_matrices_zernike/pca_mean.pth'
+  pca_matrix: './data/pca_matrices_zernike/pca_matrix65.pth'
   network:
     name: 'SFTMD'
     in_nc: 1

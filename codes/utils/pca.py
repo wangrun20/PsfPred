@@ -27,7 +27,7 @@ def main():
            'sigma': 2.6,
            'sigma_min': 0.2,
            'sigma_max': 4.0,
-           'prob_isotropic': 1.0,
+           'prob_isotropic': 0.0,
            'scale': 2,
 
            'NA': 1.35,

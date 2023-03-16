@@ -1,21 +1,21 @@
 project_name: 'IKC'
-experiment_name: 'IKC-0221-pca65-normK' # TODO: may be updated
+experiment_name: 'IKC-0316-Gpca10' # TODO: may be updated
 
 training:
   max_epochs: 10000
   correct_step: 7
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 1000 # TODO: may be updated
-  wandb_id: '4okki849' # TODO: may be updated
+  wandb_id: '49oikue7' # TODO: may be updated
 
 F_model:
   name: 'F_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices_normK/pca_mean.pth'
-  pca_matrix: './data/pca_matrices_normK/pca_matrix65.pth'
-  norm_lr: True # TODO: may be updated
-  norm_hr: True # TODO: may be updated
+  pca_mean: './data/pca_matrices_gaussian/pca_mean.pth' # TODO: may be updated
+  pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth' # TODO: may be updated
+  norm_lr: False # TODO: may be updated
+  norm_hr: False # TODO: may be updated
   network:
     name: 'SFTMD'
     in_nc: 1
@@ -23,7 +23,7 @@ F_model:
     nf: 64
     nb: 16
     scale: 2
-    input_para: 65
+    input_para: 10
     min: 0.0
     max: 1.0
     init: ~
@@ -34,7 +34,7 @@ F_model:
   loss_function:
     name: 'MSE'
   checkpoint:
-    network: './experiments/SFTMD-0221-pca65-normK/102000_network.pth' # TODO: may be updated
+    network: './experiments/SFTMD-0315-Gpca10/58000_network.pth' # TODO: may be updated
     training_state: ~
 
 P_model:
@@ -42,14 +42,13 @@ P_model:
   gpu: True
   is_data_parallel: False
   norm_lr: False # TODO: may be updated
-  norm_k: True # TODO: may be updated
-  pca_mean: './data/pca_matrices_normK/pca_mean.pth'
-  pca_matrix: './data/pca_matrices_normK/pca_matrix65.pth'
+  pca_mean: './data/pca_matrices_gaussian/pca_mean.pth' # TODO: may be updated
+  pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth' # TODO: may be updated
   network:
     name: 'Predictor'
     in_nc: 1
     nf: 64
-    code_len: 65
+    code_len: 10
     use_bias: True
     init: ['orthogonal', 0.2, 'uniform']
   optimizer:
@@ -77,7 +76,7 @@ C_model:
     name: 'Corrector'
     in_nc: 1
     nf: 64
-    code_len: 65
+    code_len: 10
     use_bias: True
     init: ['orthogonal', 0.2, 'uniform']
   optimizer:
@@ -109,24 +108,32 @@ train_data:
     mode: 'random' # TODO: may be updated
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
-    hr_size: [264, 264] # TODO: may be updated
+    hr_size: [128, 128] # TODO: may be updated
   scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
-      kernel_size: 33
-      NA: 1.35
-      Lambda: 0.525
-      RefractiveIndex: 1.33
-      SigmaX: 2.0
-      SigmaY: 2.0
-      Pixelsize: 0.0313
-      nMed: 1.33
-      phaseZ:
-          idx_start: 4
-          num_idx: 15
-          mode: 'gaussian'
-          std: 0.125
-          bound: 1.0
+    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    kernel_size: 33
+
+    sigma: 2.6
+    sigma_min: 0.2
+    sigma_max: 4.0
+    prob_isotropic: 0.0
+    scale: 2
+
+    NA: 1.35
+    Lambda: 0.525
+    RefractiveIndex: 1.33
+    SigmaX: 2.0
+    SigmaY: 2.0
+    Pixelsize: 0.0313
+    nMed: 1.33
+    phaseZ:
+      idx_start: 4
+      num_idx: 15
+      mode: 'gaussian'
+      std: 0.125
+      bound: 1.0
   sup_phaseZ: 'all'  # all | [begin, end]
   padding:
       mode: 'circular'  # constant | reflect | replicate | circular
@@ -151,24 +158,32 @@ test_data:
     mode: 'random' # TODO: may be updated
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
-    hr_size: [264, 264] # TODO: may be updated
+    hr_size: [128, 128] # TODO: may be updated
   scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
-      kernel_size: 33
-      NA: 1.35
-      Lambda: 0.525
-      RefractiveIndex: 1.33
-      SigmaX: 2.0
-      SigmaY: 2.0
-      Pixelsize: 0.0313
-      nMed: 1.33
-      phaseZ:
-          idx_start: 4
-          num_idx: 15
-          mode: 'gaussian'
-          std: 0.125
-          bound: 1.0
+    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    kernel_size: 33
+
+    sigma: 2.6
+    sigma_min: 0.2
+    sigma_max: 4.0
+    prob_isotropic: 0.0
+    scale: 2
+
+    NA: 1.35
+    Lambda: 0.525
+    RefractiveIndex: 1.33
+    SigmaX: 2.0
+    SigmaY: 2.0
+    Pixelsize: 0.0313
+    nMed: 1.33
+    phaseZ:
+      idx_start: 4
+      num_idx: 15
+      mode: 'gaussian'
+      std: 0.125
+      bound: 1.0
   sup_phaseZ: 'all'  # all | [begin, end]
   padding:
       mode: 'circular'  # constant | reflect | replicate | circular

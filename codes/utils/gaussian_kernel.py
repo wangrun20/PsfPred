@@ -106,7 +106,7 @@ def main():
                                        'sigma': 2.6,
                                        'sigma_min': 0.2,
                                        'sigma_max': 4.0,
-                                       'prob_isotropic': 1.0,
+                                       'prob_isotropic': 0.0,
                                        'scale': 2})
     k = gen(64, False)
     k = gen(64, True)

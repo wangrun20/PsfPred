@@ -1,18 +1,18 @@
 project_name: 'SFTMD'
-experiment_name: 'SFTMD-0315-Gpca10' # TODO: may be updated
+experiment_name: 'SFTMD-0316-AGpca10' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 2000 # TODO: may be updated
-  wandb_id: '9862ud83' # TODO: may be updated
+  wandb_id: '49ji8734' # TODO: may be updated
 
 model:
   name: 'F_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices_gaussian/pca_mean.pth'
-  pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth'
+  pca_mean: './data/pca_matrices_gaussian/pca_mean.pth' # TODO: may be updated
+  pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth' # TODO: may be updated
   norm_lr: False # TODO: may be updated
   norm_hr: False # TODO: may be updated
   network:
@@ -65,7 +65,7 @@ train_data:
     sigma: 2.6
     sigma_min: 0.2
     sigma_max: 4.0
-    prob_isotropic: 1.0
+    prob_isotropic: 0.0
     scale: 2
 
     NA: 1.35
@@ -86,7 +86,7 @@ train_data:
     mode: 'circular'  # constant | reflect | replicate | circular
     value: -1  # for constant mode
   loader_settings:
-    batch_size: 16 # TODO: may be updated
+    batch_size: 8 # TODO: may be updated
     shuffle: True
     num_workers: 4
     pin_memory: False
@@ -115,7 +115,7 @@ test_data:
     sigma: 2.6
     sigma_min: 0.2
     sigma_max: 4.0
-    prob_isotropic: 1.0
+    prob_isotropic: 0.0
     scale: 2
 
     NA: 1.35

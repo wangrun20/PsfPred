@@ -1,17 +1,17 @@
 project_name: 'MANet'
-experiment_name: 'MANet-0315-G' # TODO: may be updated
+experiment_name: 'MANet-0316-AG' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 4000 # TODO: may be updated
   checkpoint_freq: 8000 # TODO: may be updated
-  wandb_id: '498ifj7u' # TODO: may be updated
+  wandb_id: '98iksjnr' # TODO: may be updated
 
 model:
   name: 'MANet'
   gpu: True
   is_data_parallel: False
-  times_1e4: True # TODO: may be updated
+  times_1e4: False # TODO: may be updated
   norm_lr: False # TODO: may be updated
   network:
     name: 'MANet_s1'
@@ -51,7 +51,7 @@ train_data:
     mode: 'random' # TODO: may be updated
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
-    hr_size: [264, 264] # TODO: may be updated
+    hr_size: [128, 128] # TODO: may be updated
   scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
@@ -61,7 +61,7 @@ train_data:
     sigma: 2.6
     sigma_min: 0.2
     sigma_max: 4.0
-    prob_isotropic: 1.0
+    prob_isotropic: 0.0
     scale: 2
 
     NA: 1.35
@@ -82,7 +82,7 @@ train_data:
       mode: 'circular'  # constant | reflect | replicate | circular
       value: -1  # for constant mode
   loader_settings:
-    batch_size: 2 # TODO: may be updated
+    batch_size: 8 # TODO: may be updated
     shuffle: True
     num_workers: 4
     pin_memory: False
@@ -101,9 +101,9 @@ test_data:
     mode: 'random' # TODO: may be updated
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
-    hr_size: [264, 264] # TODO: may be updated
+    hr_size: [128, 128] # TODO: may be updated
   scale: 2 # TODO: may be updated
-  img_signal: [1000]
+  img_signal: [10000]
   psf_settings:
     type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33
@@ -111,7 +111,7 @@ test_data:
     sigma: 2.6
     sigma_min: 0.2
     sigma_max: 4.0
-    prob_isotropic: 1.0
+    prob_isotropic: 0.0
     scale: 2
 
     NA: 1.35

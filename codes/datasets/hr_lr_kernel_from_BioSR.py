@@ -6,6 +6,7 @@ import torch
 from torch.utils.data import Dataset
 import torch.nn.functional as F
 from torchvision import transforms
+from scipy.io import savemat, loadmat
 
 from utils.universal_util import random_rotate_crop_flip, add_poisson_gaussian_noise, get_phaseZ
 from utils.zernike_psf import ZernikePSFGenerator
@@ -64,6 +65,12 @@ class HrLrKernelFromBioSR(Dataset):
                 self.test_kernels = self.psf_gen.generate_PSF(phaseZ=self.test_phaseZs)
             elif self.psf_type == 'Gaussian':
                 self.test_kernels = self.psf_gen(batch_size=len(self), tensor=True, random=True)
+        # preload data
+        if opt['preload_data'] is not None:
+            print(f'load test data from {opt["preload_data"]}')
+            self.load_from_mat(opt['preload_data'])
+        else:
+            print('generate test data on the fly')
 
     def __len__(self):
         return len(self.names) * self.repeat * (self.hr_crop['scan_shape'][0] * self.hr_crop['scan_shape'][1]
@@ -171,6 +178,20 @@ class HrLrKernelFromBioSR(Dataset):
                     'kernel': kernel.squeeze(0),  # (H, W), sum up to 1.0
                     'name': name,  # str, without postfix '.png'
                     'img_signal': img_signal}  # float
+
+    def save_as_mat(self, save_path):
+        l = len(self)
+        data = [self[i] for i in range(l)]
+        hrs = [x['hr'].squeeze(0).squeeze(0).cpu().numpy() for x in data]
+        lrs = [x['lr'].squeeze(0).squeeze(0).cpu().numpy() for x in data]
+        gt_kernels = [x['kernel'].squeeze(0).cpu().numpy() for x in data]
+        names = [x['name'][0] for x in data]
+        savemat(save_path, {'hrs': hrs, 'lrs': lrs, 'gt_kernels': gt_kernels, 'names': names})
+
+    def load_from_mat(self, load_path):
+        data = loadmat(load_path)
+        self.hrs = torch.from_numpy(data['hrs']) * 65535.0
+        self.test_kernels = torch.from_numpy(data['gt_kernels'])
 
 
 def main():

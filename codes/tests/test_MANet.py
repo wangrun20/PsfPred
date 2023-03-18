@@ -1,6 +1,7 @@
 import argparse
 import os
 import torch
+import torch.nn.functional as F
 from torchvision import transforms
 from tqdm import tqdm
 import numpy as np
@@ -14,7 +15,6 @@ from utils.universal_util import read_yaml, calculate_PSNR, normalization, neare
 
 def test(opt):
     # pass parameter
-    preload_data = opt['testing']['preload_data']
     save_img = opt['testing']['save_img']
     save_mat = opt['testing']['save_mat']
     save_dir = opt['testing']['save_dir']
@@ -24,12 +24,7 @@ def test(opt):
         os.mkdir(save_dir)
 
     # set up data loader
-    if preload_data is not None:
-        test_loader = pickle_load(preload_data)
-        print(f'load test data from {preload_data}')
-    else:
-        test_loader = get_dataloader(opt['test_data'])
-        print('generate test data on the fly')
+    test_loader = get_dataloader(opt['test_data'])
 
     # set up model
     model = get_model(opt['model'])
@@ -48,7 +43,10 @@ def test(opt):
                 model.test()
 
                 gt_kernel = model.gt_kernel.squeeze(0)
-                pred_kernel = torch.mean(model.pred_kernel, dim=1).squeeze(0)
+                # 按LR像素给pred_kernel加权平均，获得预测kernel
+                weight = F.interpolate(model.lr, scale_factor=model.network.scale, mode='nearest')
+                pred_kernel = (torch.sum(model.pred_kernel * weight.view(1, -1, 1, 1), dim=1) /
+                               torch.sum(weight)).squeeze(0)
                 pred_kernels.append(pred_kernel.detach().cpu().numpy())
                 kernel_psnr = calculate_PSNR(pred_kernel, gt_kernel, max_val='auto')
                 kernel_psnrs.append(kernel_psnr)
@@ -64,7 +62,7 @@ def test(opt):
                 result = overlap(nearest_itpl(pred_kernel, show_size, norm=True), result, (show_size[-2], 0))
                 result = transforms.ToPILImage()((result * 65535).to(torch.int32))
                 font_size = max(heat_map.shape[-2] // 25, 16)
-                draw_text_on_image(result, f'Kernel PSNR {kernel_psnr:5.2f}',
+                draw_text_on_image(result, f'Mean PSNR {kernel_psnr:5.2f}',
                                    (0, heat_map.shape[-2] - 3 * font_size), font_size, 65535)
                 draw_text_on_image(result, f'PSNR {torch.min(heat_map).item():5.2f}~{torch.max(heat_map).item():5.2f}',
                                    (0, heat_map.shape[-2] - 2 * font_size), font_size, 65535)

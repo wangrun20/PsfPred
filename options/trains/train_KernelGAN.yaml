@@ -1,5 +1,5 @@
 input_image_root: './data/data_for_kernelGAN' # TODO: may be updated
-preload_data: './data/test_loaders/test_loader-120item.pth' # TODO: may be updated
+preload_data: './data/test_loaders/zernike-120item.mat' # TODO: may be updated
 output_dir_path: './results/KernelGAN' # TODO: may be updated
 img_max_val: 65535.0
 G_kernel_size: 33

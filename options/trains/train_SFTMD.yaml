@@ -1,18 +1,18 @@
 project_name: 'SFTMD'
-experiment_name: 'SFTMD-0316-AGpca10' # TODO: may be updated
+experiment_name: 'SFTMD-0317-pca65-F-actin' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 2000 # TODO: may be updated
-  wandb_id: '49ji8734' # TODO: may be updated
+  wandb_id: 'iikiuy09' # TODO: may be updated
 
 model:
   name: 'F_Model'
   gpu: True
   is_data_parallel: False
-  pca_mean: './data/pca_matrices_gaussian/pca_mean.pth' # TODO: may be updated
-  pca_matrix: './data/pca_matrices_gaussian/pca_matrix10.pth' # TODO: may be updated
+  pca_mean: './data/pca_matrices_zernike/pca_mean.pth' # TODO: may be updated
+  pca_matrix: './data/pca_matrices_zernike/pca_matrix65.pth' # TODO: may be updated
   norm_lr: False # TODO: may be updated
   norm_hr: False # TODO: may be updated
   network:
@@ -22,7 +22,7 @@ model:
     nf: 64
     nb: 16
     scale: 2
-    input_para: 10
+    input_para: 65
     min: 0.0
     max: 1.0
     init: ['orthogonal', 0.2, 'uniform'] # ~ for no init
@@ -39,7 +39,7 @@ model:
   loss_function:
     name: 'L1'  # ~ for no loss_function
   checkpoint:
-    network: ~
+    network: './experiments/SFTMD-0130-pca65/54000_network.pth'
     training_state: ~
 
 train_data:
@@ -49,7 +49,7 @@ train_data:
   repeat: ~  # ~ for no repeat
   img_filter:
     img_root: '../BioDataset/Mixed'
-    structure_selected: [1, 2, 3, 4]
+    structure_selected: [4]
     included_idx: [11, 100]
   hr_crop:
     mode: 'random' # TODO: may be updated
@@ -59,7 +59,7 @@ train_data:
   scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
-    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    type: 'Zernike' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33
 
     sigma: 2.6
@@ -99,7 +99,7 @@ test_data:
   repeat: ~  # ~ for no repeat
   img_filter:
     img_root: '../BioDataset/Mixed'
-    structure_selected: [1, 2, 3, 4]
+    structure_selected: [4]
     included_idx: [1, 10]
   hr_crop:
     mode: 'random' # TODO: may be updated
@@ -109,7 +109,7 @@ test_data:
   scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
-    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    type: 'Zernike' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33
 
     sigma: 2.6

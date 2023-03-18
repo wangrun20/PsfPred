@@ -27,7 +27,7 @@ model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/MANet-0316-G/128000_network.pth' # TODO: may be updated
+    network: './experiments/MANet-0316-AG/192000_network.pth' # TODO: may be updated
     training_state: ~
 
 test_data:
@@ -43,9 +43,9 @@ test_data:
     mode: 'random'  # ~ for no aug # TODO: may be updated
     center_pos: [-1, -1]
     scan_shape: [-1, -1]
-    hr_size: [128, 128] # TODO: may be updated
+    hr_size: [264, 264] # TODO: may be updated
   scale: 2 # TODO: may be updated
-  img_signal: [100000]
+  img_signal: [1000]
   psf_settings:
     type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33

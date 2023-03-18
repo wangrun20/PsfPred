@@ -1,12 +1,12 @@
 project_name: 'IKC'
-experiment_name: 'IKC-0316-Gpca10' # TODO: may be updated
+experiment_name: 'IKC-0316-AGpca10' # TODO: may be updated
 
 training:
   max_epochs: 10000
   correct_step: 7
   validation_freq: 500 # TODO: may be updated
   checkpoint_freq: 1000 # TODO: may be updated
-  wandb_id: '49oikue7' # TODO: may be updated
+  wandb_id: '9o8113t4' # TODO: may be updated
 
 F_model:
   name: 'F_Model'
@@ -34,7 +34,7 @@ F_model:
   loss_function:
     name: 'MSE'
   checkpoint:
-    network: './experiments/SFTMD-0315-Gpca10/58000_network.pth' # TODO: may be updated
+    network: './experiments/SFTMD-0316-AGpca10/74000_network.pth' # TODO: may be updated
     training_state: ~
 
 P_model:
@@ -139,7 +139,7 @@ train_data:
       mode: 'circular'  # constant | reflect | replicate | circular
       value: -1  # for constant mode
   loader_settings:
-    batch_size: 16 # TODO: may be updated
+    batch_size: 8 # TODO: may be updated
     shuffle: True
     num_workers: 4
     pin_memory: False

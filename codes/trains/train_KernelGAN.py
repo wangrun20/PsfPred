@@ -4,7 +4,7 @@ from tqdm import tqdm
 import torch
 from torchvision import transforms
 import numpy as np
-from scipy.io import savemat
+from scipy.io import savemat, loadmat
 
 from models import get_model
 from models.KernelGAN import KernelGAN, Learner
@@ -53,7 +53,13 @@ def main():
             savemat(os.path.join(opt['output_dir_path'], '%s_kernel.mat' % os.path.basename(opt['img_name'])),
                     {'kernel': pred_kernel})
     else:
-        testset = pickle_load(opt['preload_data']).dataset
+        mat_data = loadmat(opt['preload_data'])
+        testset = []
+        for i in range(mat_data['hrs'].shape[0]):
+            testset.append({'hr': torch.from_numpy(mat_data['hrs'][i:i + 1, :, :]),
+                            'lr': torch.from_numpy(mat_data['lrs'][i:i + 1, :, :]),
+                            'kernel': torch.from_numpy(mat_data['gt_kernels'][i, :, :]),
+                            'name': mat_data['names'][i]})
         print(f'load test data from {opt["preload_data"]}')
         F_model = get_model(opt['SFTMD_model']) if opt['do_SFTMD'] else None
         try:

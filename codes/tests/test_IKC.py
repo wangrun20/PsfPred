@@ -14,7 +14,6 @@ from utils.universal_util import read_yaml, calculate_PSNR, normalization, PCA_D
 
 def test(opt):
     # pass parameter
-    preload_data = opt['testing']['preload_data']
     correct_step = opt['testing']['correct_step']
     save_img = opt['testing']['save_img']
     save_mat = opt['testing']['save_mat']
@@ -25,12 +24,7 @@ def test(opt):
         os.mkdir(save_dir)
 
     # set up data loader
-    if preload_data is not None:
-        test_loader = pickle_load(preload_data)
-        print(f'load test data from {preload_data}')
-    else:
-        test_loader = get_dataloader(opt['test_data'])
-        print('generate test data on the fly')
+    test_loader = get_dataloader(opt['test_data'])
 
     # set up model
     F_model = get_model(opt['F_model'])

@@ -44,8 +44,9 @@ model:
 train_data:
   name: 'HrLrKernelFromBioSR'
   is_train: True
+  preload_data: ~
   gpu_id: ~
-  repeat: ~  # ~ for no repeat
+  repeat: ~ # TODO: may be updated
   img_filter:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]
@@ -86,8 +87,9 @@ train_data:
 test_data:
   name: 'HrLrKernelFromBioSR'
   is_train: False
+  preload_data: # './data/test_loaders/zernike-40item.mat' # TODO: may be updated
   gpu_id: ~
-  repeat: ~  # ~ for no repeat
+  repeat: ~ # TODO: may be updated
   img_filter:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]

@@ -8,7 +8,7 @@ from torchvision import transforms
 from tqdm import tqdm
 
 from models import get_model
-from utils.universal_util import read_yaml, normalization
+from utils.universal_util import read_yaml, normalization, overlap
 
 
 def test(opt):
@@ -19,7 +19,7 @@ def test(opt):
     save_dir = opt['testing']['save_dir']
 
     # mkdir
-    if (save_img or save_mat) and not os.path.exists(save_dir):
+    if (save_img['sr'] or save_img['kernel'] or save_img['sr_kernel'] or save_mat) and not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
     # set up model
@@ -49,12 +49,17 @@ def test(opt):
 
                 result_sr = normalization(F_model.sr).squeeze(0).squeeze(0)
                 result_kernel = normalization(pred_kernel).squeeze(0).squeeze(0)
+                result_all = overlap(result_kernel, result_sr, (0, 0))
                 result_sr = transforms.ToPILImage()((result_sr * 65535).to(torch.int32))
                 result_kernel = transforms.ToPILImage()((result_kernel * 65535).to(torch.int32))
+                result_all = transforms.ToPILImage()((result_all * 65535).to(torch.int32))
 
-                if save_img:
+                if save_img['sr']:
                     result_sr.save(os.path.join(save_dir, name))
+                if save_img['kernel']:
                     result_kernel.save(os.path.join(save_dir, name.replace('.png', '_k.png')))
+                if save_img['sr_kernel']:
+                    result_all.save(os.path.join(save_dir, name.replace('.png', '_sr-k.png')))
                 pbar.update(1)
     if save_mat:
         savemat(os.path.join(save_dir, 'results.mat'), {'UNetBased_pred_kernels': pred_kernels,

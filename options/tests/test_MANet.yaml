@@ -25,15 +25,15 @@ model:
   loss_function:
     name: ~
   checkpoint:
-    network: './experiments/MANet-0316-AG/192000_network.pth' # TODO: may be updated
+    network: './experiments/MANet-0318-3phz-(2)/224000_network.pth' # TODO: may be updated
     training_state: ~
 
 test_data:
   name: 'HrLrKernelFromBioSR'
   is_train: False
-  preload_data: './data/test_loaders/gaussian-120item.mat' # TODO: may be updated
+  preload_data: # './data/test_loaders/gaussian-120item.mat' # TODO: may be updated
   gpu_id: ~
-  repeat: 3 # TODO: may be updated
+  repeat: 1 # TODO: may be updated
   img_filter:
     img_root: '../BioDataset/Mixed'
     structure_selected: [1, 2, 3, 4]
@@ -46,7 +46,7 @@ test_data:
   scale: 2 # TODO: may be updated
   img_signal: [1000]
   psf_settings:
-    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    type: 'Zernike' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33
 
     sigma: 2.6
@@ -64,7 +64,7 @@ test_data:
     nMed: 1.33
     phaseZ:
       idx_start: 4
-      num_idx: 15
+      num_idx: 3
       mode: 'gaussian'
       std: 0.125
       bound: 1.0

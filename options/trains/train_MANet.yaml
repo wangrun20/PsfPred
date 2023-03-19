@@ -1,11 +1,11 @@
 project_name: 'MANet'
-experiment_name: 'MANet-0316-AG' # TODO: may be updated
+experiment_name: 'MANet-0319-5phz-(2)' # TODO: may be updated
 
 training:
   max_epochs: 10000
   validation_freq: 4000 # TODO: may be updated
   checkpoint_freq: 8000 # TODO: may be updated
-  wandb_id: '98iksjnr' # TODO: may be updated
+  wandb_id: '0o91qqjr' # TODO: may be updated
 
 model:
   name: 'MANet'
@@ -21,7 +21,7 @@ model:
     manet_nf: 128
     manet_nb: 1
     split: 2
-    init: ['xavier_normal', 0.1, 'normal']
+    init: ['uniform', 0.2, 'uniform']
   optimizer:
     name: 'Adam'
     lr: 2e-4
@@ -56,7 +56,7 @@ train_data:
   scale: 2 # TODO: may be updated
   img_signal: [100, 1000]
   psf_settings:
-    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    type: 'Zernike' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33
 
     sigma: 2.6
@@ -74,7 +74,7 @@ train_data:
     nMed: 1.33
     phaseZ:
       idx_start: 4
-      num_idx: 15
+      num_idx: 5
       mode: 'gaussian'
       std: 0.125
       bound: 1.0
@@ -107,7 +107,7 @@ test_data:
   scale: 2 # TODO: may be updated
   img_signal: [10000]
   psf_settings:
-    type: 'Gaussian' # Gaussian | Zernike TODO: may be updated
+    type: 'Zernike' # Gaussian | Zernike TODO: may be updated
     kernel_size: 33
 
     sigma: 2.6
@@ -125,7 +125,7 @@ test_data:
     nMed: 1.33
     phaseZ:
       idx_start: 4
-      num_idx: 15
+      num_idx: 5
       mode: 'gaussian'
       std: 0.125
       bound: 1.0

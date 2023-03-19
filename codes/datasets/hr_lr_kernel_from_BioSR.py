@@ -67,10 +67,10 @@ class HrLrKernelFromBioSR(Dataset):
                 self.test_kernels = self.psf_gen(batch_size=len(self), tensor=True, random=True)
         # preload data
         if opt['preload_data'] is not None:
-            print(f'load test data from {opt["preload_data"]}')
+            print(f'load data from {opt["preload_data"]}')
             self.load_from_mat(opt['preload_data'])
         else:
-            print('generate test data on the fly')
+            print('generate data on the fly')
 
     def __len__(self):
         return len(self.names) * self.repeat * (self.hr_crop['scan_shape'][0] * self.hr_crop['scan_shape'][1]

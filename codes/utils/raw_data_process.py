@@ -8,25 +8,27 @@ from PIL import Image
 
 
 def add_1to9():
-    root = r'F:\DAO_WR\20230221_SUM_ki_CCPs_Clathrin'
+    root = r'F:\DAO_WR\20230219_COS7_MT_3XmEmerald_Enconsin\LowNA_GI-SIM'
     dirs = os.listdir(root)
-    name = 'roi1_seq1_TIRF-SIM488_GreenCh.tif'
+    name = 'roi1_seq1_Low NA GI-SIM488_GreenCh.tif'
     for dir in dirs:
         if os.path.exists(os.path.join(root, dir, name)):
             s = mtif.read_stack(os.path.join(root, dir, name))
             s = np.array(s)
-            img = s[0, :, :] * 0
-            img = np.asarray(img, dtype=np.int32)
-            for i in range(9):
-                img += s[i, :, :]
-            assert np.min(img) >= 0.0
-            if np.max(img) > 65535:
-                img = np.asarray(img, dtype=float)
-                img = (img - np.min(img)) / (np.max(img) - np.min(img))
-                img *= 65535
+            for j in range(s.shape[0] // 9):
+                img = s[0, :, :] * 0
                 img = np.asarray(img, dtype=np.int32)
-            img = transforms.ToPILImage()(torch.from_numpy(img))
-            img.save(os.path.join(root, dir, '1-9.png'))
+                for i in range(9):
+                    img += s[i + 9 * j, :, :]
+                assert np.min(img) >= 0.0
+                if np.max(img) > 65535:
+                    img = np.asarray(img, dtype=float)
+                    img = (img - np.min(img)) / (np.max(img) - np.min(img))
+                    img *= 65535
+                    img = np.asarray(img, dtype=np.int32)
+                img = transforms.ToPILImage()(torch.from_numpy(img))
+                img.save(os.path.join(root, dir, f'{9 * j + 1}-{9 * j + 9}.png'))
+            print(f'{dir} done')
 
 
 def extract_recons():
@@ -50,13 +52,19 @@ def extract_recons():
 
 
 def copy_rename():
-    root = r'F:\DAO_WR\20230221_SUM_ki_CCPs_Clathrin'
+    root = r'F:\DAO_WR\20230219_COS7_MT_3XmEmerald_Enconsin\LowNA_GI-SIM'
     dirs = os.listdir(root)
     for dir in dirs:
-        if os.path.exists(os.path.join(root, dir, '1-9.png')):
-            shutil.copy(os.path.join(root, dir, '1-9.png'), os.path.join(r'C:\Mine\PsfPred\data\exp-raw', f'{dir}.png'))
-        if os.path.exists(os.path.join(root, dir, 'recons.png')):
-            shutil.copy(os.path.join(root, dir, 'recons.png'), os.path.join(r'C:\Mine\PsfPred\data\exp-raw', f'{dir}-GT.png'))
+        os.mkdir(os.path.join(r'C:\Mine\PsfPred\data\exp_timeline', dir))
+        i = 0
+        while True:
+            if os.path.exists(os.path.join(root, dir, f'{i * 9 + 1}-{i * 9 + 9}.png')):
+                shutil.copy(os.path.join(root, dir, f'{i * 9 + 1}-{i * 9 + 9}.png'),
+                            os.path.join(r'C:\Mine\PsfPred\data\exp_timeline', dir, f'{i * 9 + 1}-{i * 9 + 9}.png'))
+                i += 1
+            else:
+                break
+        print(f'{dir} done')
 
 
 def scan_pos(H, W, h, w, s=2):
@@ -108,7 +116,7 @@ def crop(h=132, w=132):
 
 
 if __name__ == '__main__':
-    # add_1to9()
+    add_1to9()
     # extract_recons()
-    # copy_rename()
-    crop()
+    copy_rename()
+    # crop()

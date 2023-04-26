@@ -1,8 +1,8 @@
 # Complex Optical Aberration Estimation via Spatial-Frequency Encoding Network Enables Sensitive Digital Adaptive Optics and Super-resolution Imaging
 
-all codes written by Run Wang
+codes written by Run Wang
 
-all figures drawn by Run Wang
+figures drawn by Run Wang
 
 ## Network Architecture
 

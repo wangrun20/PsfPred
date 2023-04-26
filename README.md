@@ -2,6 +2,8 @@
 
 all codes written by Run Wang
 
+all figures drawn by Run Wang
+
 ## Network Architecture
 
 ![](./figures/Network%20Architecture.png "Network Architecture")
